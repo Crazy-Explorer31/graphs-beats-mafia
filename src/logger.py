@@ -53,7 +53,7 @@ class GameLogger:
     # Make Color accessible as a class attribute
     Color = Color
 
-    def __init__(self, log_to_file=True, log_dir="logs"):
+    def __init__(self, log_to_file=True, log_dir="logs", filename='mafia_game'):
         """
         Initialize the game logger.
 
@@ -82,7 +82,7 @@ class GameLogger:
         if log_to_file:
             os.makedirs(log_dir, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            self.log_file = open(f"{log_dir}/mafia_game_{timestamp}.log", "w")
+            self.log_file = open(f"{log_dir}/{filename}_{timestamp}.log", "w")
 
     def __del__(self):
         """Close log file when logger is destroyed."""
@@ -193,6 +193,32 @@ class GameLogger:
             display_name = f"{player_name} [{model_name}]"
 
         self.print(f"┌─ {display_name} ({role}) ", role_color, bold=True)
+        self.print(f"└─ {formatted_response}", Color.WHITE)
+        self.print("")
+
+    def player_response_hidden(self, model_name, role, response, question, player_name=None):
+        """
+        Log player response.
+
+        Args:
+            model_name (str): The model name of the player.
+            role (str): The role of the player.
+            response (str): The player's response.
+            player_name (str, optional): The display name of the player.
+            question (str): Secret question, asked in dedicated room!
+        """
+        role_color = self.role_colors.get(role, Color.WHITE)
+
+        # Format the response with indentation
+        formatted_response = response.replace("\n", "\n    ")
+
+        # Display both model name and player name if provided
+        display_name = model_name
+        if player_name and player_name != model_name:
+            display_name = f"{player_name} [{model_name}]"
+
+        self.print(f"┌─ {display_name} ({role}) ", role_color, bold=True)
+        self.print(f"| {question}", underline=True)
         self.print(f"└─ {formatted_response}", Color.WHITE)
         self.print("")
 

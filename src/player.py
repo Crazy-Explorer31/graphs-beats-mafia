@@ -1,7 +1,7 @@
 """
 Player class for the LLM Mafia Game Competition.
 """
-
+import random
 import re
 import config
 from openrouter import get_llm_response
@@ -10,6 +10,7 @@ from game_templates import (
     GAME_RULES,
     CONFIRMATION_VOTE_EXPLANATIONS,
     PROMPT_TEMPLATES,
+    PROMPT_TEMPLATES_HIDDEN,
     CONFIRMATION_VOTE_TEMPLATES,
     THINKING_TAGS,
     ACTION_PATTERNS,
@@ -138,6 +139,85 @@ class Player:
                 player_names=", ".join(player_names),
                 game_state=game_state,
                 thinking_tag=THINKING_TAGS[language],
+                discussion_history=discussion_history,
+            )
+
+        return prompt
+    
+    def generate_prompt_hidden(
+        self, game_state, all_players, mafia_members=None, discussion_history=None, question=None
+    ):
+        """
+        Generate a prompt for the player based on their role.
+
+        Args:
+            game_state (dict): The current state of the game.
+            all_players (list): List of all players in the game.
+            mafia_members (list, optional): List of mafia members (only for Mafia role).
+            discussion_history (str, optional): History of previous discussions.
+                Note: This should only contain day phase messages, night messages are filtered out.
+
+        Returns:
+            str: The prompt for the player.
+        """
+        if discussion_history is None:
+            discussion_history = ""
+        if question is None:
+            question = ""
+
+        # Get list of player names (using visible player names)
+        player_names = [p.player_name for p in all_players if p.alive]
+
+        # Make sure we're only using player_name (not model_name) for other players
+        # This ensures players only know each other by their player names
+        player_info = [{"name": p.player_name, "alive": p.alive} for p in all_players]
+
+        # Get the appropriate language, defaulting to English if not supported
+        language = self.language if self.language in GAME_RULES else "English"
+
+        # Get game rules for the player's language
+        game_rules = GAME_RULES[language]
+
+        if self.role == Role.MAFIA:
+            # For Mafia members (using visible player names)
+            mafia_names = [
+                p.player_name for p in mafia_members if p != self and p.alive
+            ]
+            mafia_list = f"{', '.join(mafia_names) if mafia_names else 'None (you are the only Mafia left)'}"
+            if language == "Spanish":
+                mafia_list = f"{', '.join(mafia_names) if mafia_names else 'Ninguno (eres el único miembro de la Mafia que queda)'}"
+            elif language == "French":
+                mafia_list = f"{', '.join(mafia_names) if mafia_names else 'Aucun (vous êtes le seul membre de la Mafia restant)'}"
+            elif language == "Korean":
+                mafia_list = f"{', '.join(mafia_names) if mafia_names else '없음 (당신이 유일하게 남은 마피아입니다)'}"
+
+            prompt = PROMPT_TEMPLATES_HIDDEN[language][Role.MAFIA].format(
+                model_name=self.player_name,  # Use player_name in prompts
+                game_rules=game_rules,
+                mafia_members=mafia_list,
+                player_names=", ".join(player_names),
+                game_state=game_state,
+                question=question,
+                discussion_history=discussion_history,
+            )
+        elif self.role == Role.DOCTOR:
+            # For Doctor
+            prompt = PROMPT_TEMPLATES_HIDDEN[language][Role.DOCTOR].format(
+                model_name=self.player_name,  # Use player_name in prompts
+                game_rules=game_rules,
+                player_names=", ".join(player_names),
+                game_state=game_state,
+                question=question,
+                discussion_history=discussion_history,
+            )
+        else:  # Role.VILLAGER
+            # For Villagers
+            prompt = PROMPT_TEMPLATES_HIDDEN[language][Role.VILLAGER].format(
+                model_name=self.player_name,  # Use player_name in prompts
+                game_rules=game_rules,
+                player_names=", ".join(player_names),
+                game_state=game_state,
+                question=question,
                 discussion_history=discussion_history,
             )
 

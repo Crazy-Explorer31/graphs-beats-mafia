@@ -56,6 +56,7 @@ class MafiaGame:
 
         # Initialize logger
         self.logger = GameLogger()
+        self.logger_hidden = GameLogger(filename="mafia_game_hidden")
 
     def setup_game(self):
         """
@@ -647,12 +648,27 @@ class MafiaGame:
                     player.language, voting_reminders["English"]
                 )
                 game_state += reminder
+            
+            question = random.choice(QUESTIONS)
+            prompt_hidden = player.generate_prompt_hidden(
+                game_state,
+                alive_players,
+                self.mafia_players if player.role == Role.MAFIA else None,
+                self.discussion_history_without_thinkings(),
+                question
+            )
 
             prompt = player.generate_prompt(
                 game_state,
                 alive_players,
                 self.mafia_players if player.role == Role.MAFIA else None,
                 self.discussion_history_without_thinkings(),
+            )
+
+            # Get hidden response
+            response_hidden = player.get_response(prompt_hidden)
+            self.logger_hidden.player_response_hidden(
+                player.model_name, player.role.value, response_hidden, question, player.player_name
             )
 
             # Get response
@@ -994,3 +1010,35 @@ player_names = [
     "Winter",
     "Zion",
 ]
+
+SITUATION_QUESTIONS = [
+    "How do you assess the current state of the game? Who do you think is in a winning position?",
+"What key events took place in recent rounds and how did they affect the balance of power?",
+"Describe the current alliances and conflicts between the players. Who teamed up with whom?",
+"How has your assessment of the situation changed from the beginning of the game to this moment?",
+]
+
+PLAYER_ANALYSIS_QUESTIONS = [
+    "Who makes you most suspicious and why? Place the top 3 suspects with justification.",
+"Whose behavior do you think is the most sincere/honest? Explain why.",
+    "Analyze the latest statements of other players. In whose speeches did you notice contradictions?",
+"If you were a mafia, who would you kill the next night and why?",
+"Who do you think other players might suspect and why?",
+]
+
+STRATEGY_QUESTIONS = [
+    "What strategy do you plan to use in this round? Describe your plan of action.",
+"What do you need to do to strengthen your position or weaken the position of your opponents?",
+"What risks do you see in your current strategy?",
+"How does your role affect the choice of strategy in this round?",
+    "What could go wrong and how did you prepare for it?"
+]
+
+PREDICTION_QUESTIONS = [
+    "What do you think the real roles of the other players are? Evaluate the probability for everyone.",
+"What is the most likely outcome of voting in this round and why?",
+"Predict who the next victim might be and why this particular player.",
+"How confident are you in your current assumptions? What can change your mind?",
+]
+
+QUESTIONS = SITUATION_QUESTIONS + PLAYER_ANALYSIS_QUESTIONS + STRATEGY_QUESTIONS + PREDICTION_QUESTIONS
