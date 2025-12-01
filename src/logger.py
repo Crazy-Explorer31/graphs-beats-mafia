@@ -53,7 +53,7 @@ class GameLogger:
     # Make Color accessible as a class attribute
     Color = Color
 
-    def __init__(self, log_to_file=True, log_dir="logs", filename='mafia_game'):
+    def __init__(self, log_to_file=True, log_dir="logs", filename='mafia_game', hidden=False):
         """
         Initialize the game logger.
 
@@ -78,28 +78,50 @@ class GameLogger:
             "day": Color.BRIGHT_YELLOW,
         }
 
+        self.hidden = hidden
+
         # Create log directory if needed
         if log_to_file:
+            self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             os.makedirs(log_dir, exist_ok=True)
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            self.log_file = open(f"{log_dir}/{filename}_{timestamp}.log", "w")
+            os.makedirs(log_dir + f"/{self.timestamp}", exist_ok=True)
+            self.log_dir = log_dir
+            self.filename = filename
+            if not self.hidden:
+                self.log_file = open(f"{log_dir}/{self.timestamp}/{filename}.log", "w")
+
+    def setup_hidden(self, player_descs):
+        if self.hidden:
+            self.log_files = {
+                player_desc.split("_")[1] : open(f"{self.log_dir}/{self.timestamp}/{self.filename}_{player_desc}.log", "w") for player_desc in player_descs 
+            }
+            print(self.log_files.keys())
 
     def __del__(self):
         """Close log file when logger is destroyed."""
         if self.log_file:
-            self.log_file.close()
+            if not self.hidden:
+                self.log_file.close()
+            else:
+                for key, value in self.log_files.items():
+                    value.close()
 
-    def _write_to_file(self, text):
+    def _write_to_file(self, text, player_name=None):
         """Write plain text to log file."""
-        if self.log_to_file and self.log_file:
+        if self.log_to_file and (self.log_file or self.log_files[player_name]):
             # Remove ANSI color codes for file logging
             clean_text = text
             for color in Color:
                 clean_text = clean_text.replace(color.value, "")
-            self.log_file.write(clean_text + "\n")
-            self.log_file.flush()
+            if not self.hidden:
+                self.log_file.write(clean_text + "\n")
+                self.log_file.flush()
+            else:
+                self.log_files[player_name].write(clean_text + "\n")
+                self.log_files[player_name].flush()
 
-    def print(self, text, color=None, bold=False, underline=False):
+        
+    def print(self, text, color=None, bold=False, underline=False, player_name=None):
         """
         Print colored text to console and log file.
 
@@ -124,7 +146,7 @@ class GameLogger:
             formatted_text = f"{formatted_text}{Color.RESET.value}"
 
         print(formatted_text)
-        self._write_to_file(formatted_text)
+        self._write_to_file(formatted_text, player_name=player_name)
 
     def header(self, text, color=Color.CYAN):
         """Print a header with a box around it."""
@@ -198,7 +220,7 @@ class GameLogger:
 
     def player_response_hidden(self, model_name, role, response, question, player_name=None):
         """
-        Log player response.
+        Log player hidden response.
 
         Args:
             model_name (str): The model name of the player.
@@ -217,10 +239,10 @@ class GameLogger:
         if player_name and player_name != model_name:
             display_name = f"{player_name} [{model_name}]"
 
-        self.print(f"┌─ {display_name} ({role}) ", role_color, bold=True)
-        self.print(f"| {question}", underline=True)
-        self.print(f"└─ {formatted_response}", Color.WHITE)
-        self.print("")
+        self.print(f"┌─ {display_name} ({role}) ", role_color, bold=True, player_name=player_name)
+        self.print(f"| {question}", underline=True, player_name=player_name)
+        self.print(f"└─ {formatted_response}", Color.WHITE, player_name=player_name)
+        self.print("", player_name=player_name)
 
     def player_action(self, model_name, role, action, player_name=None):
         """

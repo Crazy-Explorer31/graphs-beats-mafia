@@ -56,7 +56,7 @@ class MafiaGame:
 
         # Initialize logger
         self.logger = GameLogger()
-        self.logger_hidden = GameLogger(filename="mafia_game_hidden")
+        self.logger_hidden = GameLogger(filename="answers_hidden", hidden=True)
 
     def setup_game(self):
         """
@@ -132,6 +132,13 @@ class MafiaGame:
             self.logger.player_setup(
                 player.model_name, player.role.value, player.player_name
             )
+
+            # self.logger_hidden.player_setup( # NOTICE: can be activated
+            #     player.model_name, player.role.value, player.player_name
+            # )
+        self.logger_hidden.setup_hidden(
+            [f"{player.model_name}_{player.player_name}_{player.role}".replace("Role.", "") for player in self.players]
+        )
 
         # Set phase to night
         self.phase = "night"
@@ -670,13 +677,13 @@ class MafiaGame:
             # Get hidden response
             response_hidden = player.get_response(prompt_hidden)
             self.logger_hidden.player_response_hidden(
-                player.model_name, player.role.value, response_hidden, question, player.player_name
+                player.model_name, player.role.value, response_hidden, question, player_name=player.player_name
             )
 
             # Get response
             response_to_remind = player.get_response(pre_prompt)
             self.logger_hidden.player_response_hidden(
-                player.model_name, player.role.value, response_to_remind, question_to_remind, player.player_name
+                player.model_name, player.role.value, response_to_remind, question_to_remind, player_name=player.player_name
             )
 
             prompt = player.generate_prompt(
