@@ -649,7 +649,7 @@ class MafiaGame:
                 )
                 game_state += reminder
             
-            question = random.choice(QUESTIONS)
+            question = "Which role have each of alive players?"
             prompt_hidden = player.generate_prompt_hidden(
                 game_state,
                 alive_players,
@@ -658,17 +658,32 @@ class MafiaGame:
                 question
             )
 
-            prompt = player.generate_prompt(
+            question_to_remind = "What do you plan to do right now?"
+            pre_prompt = player.generate_prompt_hidden(
                 game_state,
                 alive_players,
                 self.mafia_players if player.role == Role.MAFIA else None,
                 self.discussion_history_without_thinkings(),
+                question_to_remind
             )
 
             # Get hidden response
             response_hidden = player.get_response(prompt_hidden)
             self.logger_hidden.player_response_hidden(
                 player.model_name, player.role.value, response_hidden, question, player.player_name
+            )
+
+            # Get response
+            response_to_remind = player.get_response(pre_prompt)
+            self.logger_hidden.player_response_hidden(
+                player.model_name, player.role.value, response_to_remind, question_to_remind, player.player_name
+            )
+
+            prompt = player.generate_prompt(
+                game_state,
+                alive_players,
+                self.mafia_players if player.role == Role.MAFIA else None,
+                self.discussion_history_without_thinkings() + "\n" + self.get_processed_remind(response_to_remind),
             )
 
             # Get response
@@ -718,6 +733,9 @@ class MafiaGame:
 
             # Update discussion history
             self.discussion_history += f"{player.player_name}: {response}\n\n"
+
+    def get_processed_remind(self, remind):
+        return f"You must do, folliwing your plans from there: {remind}"
 
     def get_last_words(self, player, vote_count):
         """
