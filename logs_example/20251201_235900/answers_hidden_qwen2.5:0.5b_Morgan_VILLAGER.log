@@ -1,0 +1,28 @@
+┌─ Morgan [qwen2.5:0.5b] (Villager) 
+| Which role have each of alive players?
+└─ As a Villager, I am currently in the Night phase and haven't been able to vote yet during this time.
+    
+    I hope we can resolve this issue before the day voting phase begins. During our current discussions, the main focus is identifying potential Mafia members. If you would like me to take over from here or if there's anything specific that needs clarification, please feel free to ask!
+
+┌─ Morgan [qwen2.5:0.5b] (Villager) 
+| What do you plan to do right now?
+└─ VOTE: [player]
+
+┌─ Morgan [qwen2.5:0.5b] (Villager) 
+| Which role have each of alive players?
+└─ Hello, everyone! Welcome to our Mafia game! As the final vote phase (day voting), it is our turn to decide a Mafia member.
+    
+    Before we begin, let's recap the current state: 6 players are present: Harper, Nico, Taylor, Peyton, Morgan, and Val. We're at Round 1 of the night phase, with two Mafia members (Morgan and Harper) and four Villagers/Doctors (Val, Taylor, Harper, Nico, Taylor). The game is now in DAY DISCUSSION phase.
+    
+    Nico's thoughts: 
+    - ACTION: Kill Morgan
+    - VOTE: [player]
+    
+    I believe this action eliminates Morgan and aligns our goal of winning by any means necessary. Now it's your turn to vote.
+    
+    VOTE: [player]
+
+┌─ Morgan [qwen2.5:0.5b] (Villager) 
+| What do you plan to do right now?
+└─ VOTE: [player]
+
