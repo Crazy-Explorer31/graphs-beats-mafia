@@ -14,6 +14,7 @@ OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # Ollama API settings
 OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
+
 '''
 OLLAMA_MODELS = [
     "qwen:0.5b",
@@ -25,7 +26,8 @@ OLLAMA_MODELS = [
     "qwen3:0.6b",
 ]
 '''
-OLLAMA_MODELS = ["qwen2.5:7b"] * 6
+OLLAMA_MODELS = ["qwen2.5:0.5b"] * 6
+# OLLAMA_MODELS = ["qwen2.5:7b"] * 6
 # Firebase settings
 FIREBASE_CREDENTIALS_PATH = (
     "firebase_credentials.json"  # Path to your Firebase credentials file
