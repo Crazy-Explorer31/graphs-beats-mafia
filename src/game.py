@@ -656,7 +656,7 @@ class MafiaGame:
                 )
                 game_state += reminder
             
-            question = "Which role have each of alive players?"
+            question = "Which role does each of the living players have?"
             prompt_hidden = player.generate_prompt_hidden(
                 game_state,
                 alive_players,
@@ -742,7 +742,7 @@ class MafiaGame:
             self.discussion_history += f"{player.player_name}: {response}\n\n"
 
     def get_processed_remind(self, remind):
-        return f"You must do, folliwing your plans from there: {remind}"
+        return f"You must follow your plan: {remind}"
 
     def get_last_words(self, player, vote_count):
         """

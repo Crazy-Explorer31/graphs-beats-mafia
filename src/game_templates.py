@@ -363,7 +363,7 @@ IMPORTANT INSTRUCTIONS:
 
 Previous discussion: {discussion_history}
 
-Now you have to answer to the question. No one player will not hear you, I only want to now your thoughts.
+Now you have to answer to the question. None of the players will hear you; I only want to know your thoughts..
 {question}
 
 Your response:
@@ -385,7 +385,7 @@ IMPORTANT INSTRUCTIONS:
 
 Previous discussion: {discussion_history}
 
-Now you have to answer to the question. No one player will not hear you, I only want to now your thoughts.
+Now you have to answer to the question. None of the players will hear you; I only want to know your thoughts..
 {question}
 
 Your response:
@@ -406,7 +406,7 @@ IMPORTANT INSTRUCTIONS:
 
 Previous discussion: {discussion_history}
 
-Now you have to answer to next question. No one player will not hear you, I only want to now your thoughts.
+Now you have to answer to next question. None of the players will hear you; I only want to know your thoughts..
 {question}
 
 Your response:
