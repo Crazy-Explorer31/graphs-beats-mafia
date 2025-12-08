@@ -422,6 +422,8 @@ Before the elimination is carried out, a confirmation vote is needed.
 
 {confirmation_explanation}
 
+Here is the history of the discussion: {discussion_history}
+
 Current game state: {game_state_str}
 
 {thinking_tag}

@@ -814,7 +814,7 @@ class MafiaGame:
             }
 
             # Get player's vote
-            vote = player.get_confirmation_vote(player_state)
+            vote = player.get_confirmation_vote(player_state, self.discussion_history_without_thinkings())
 
             # Validate and record vote
             if vote.lower() in ["agree", "yes", "confirm", "true"]:

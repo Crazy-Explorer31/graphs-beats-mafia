@@ -517,7 +517,7 @@ class Player:
             return self._find_target_player(target_name, all_players)
         return None
 
-    def get_confirmation_vote(self, game_state):
+    def get_confirmation_vote(self, game_state, discussion_history):
         """
         Get a confirmation vote from the player on whether to eliminate another player.
 
@@ -549,6 +549,7 @@ class Player:
             confirmation_explanation=confirmation_explanation,
             game_state_str=game_state_str,
             thinking_tag=THINKING_TAGS[language],
+            discussion_history=discussion_history
         )
 
         response = self.get_response(prompt)
