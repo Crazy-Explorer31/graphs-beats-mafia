@@ -24,7 +24,7 @@ from game_templates import (
 class Player:
     """Represents an LLM player in the Mafia game."""
 
-    def __init__(self, model_name, player_name, role, language=None, use_graph=False):
+    def __init__(self, model_name, player_name, role, language=None, use_graph=False, game=None):
         """
         Initialize a player.
 
@@ -42,6 +42,7 @@ class Player:
         self.graph = None
         self.protected = False  # Whether the player is protected by the doctor
         self.language = language if language else "English"
+        self.game = game
 
     def __str__(self):
         """Return a string representation of the player."""
@@ -247,6 +248,12 @@ class Player:
             lines.extend(mutual_relations[:3])
 
         return "\n".join(lines)
+    
+    def discussion_history_without_thinkings(self):
+        return self.game.discussion_history_without_thinkings()
+    
+    def discussion_history_last_round_without_thinkings(self):
+        return self.game.discussion_history_last_round_without_thinkings()
 
     def _find_target_player(self, target_name, all_players, exclude_mafia=False):
         """

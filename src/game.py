@@ -32,6 +32,7 @@ class MafiaGame:
         self.doctor_player: Player | None = None
         self.villager_players: list[Player] = []
         self.discussion_history = ""
+        self.discussion_history_last_round = ""
         self.rounds_data = []
         self.language = language if language is not None else config.LANGUAGE
         self.current_round_data = {
@@ -117,7 +118,7 @@ class MafiaGame:
                 player_name = random.choice(available_names)
 
             # Create player with both model_name and player_name
-            player = Player(model_name, player_name, roles[i], language=self.language)
+            player = Player(model_name, player_name, roles[i], language=self.language, game=self)
             self.players.append(player)
 
             # Add to role-specific lists
@@ -222,6 +223,30 @@ class MafiaGame:
             r"<[tT][hH][iI][nN][kK]>.*?</[tT][hH][iI][nN][kK]>",
             "",
             self.discussion_history,
+            flags=re.DOTALL,
+        )
+
+        # Then handle any unclosed tags - remove from opening tag to the end of the string
+        discussion_history_without_thinkings = re.sub(
+            r"<[tT][hH][iI][nN][kK]>.*$",
+            "",
+            discussion_history_without_thinkings,
+            flags=re.DOTALL,
+        )
+
+        return discussion_history_without_thinkings
+    
+    def discussion_history_last_round_without_thinkings(self):
+        """
+        Get the discussion history for the current round, excluding thinking messages.
+        Removes any <think></think> or <THINK></THINK> tags and their contents.
+        If a closing tag is missing, removes everything from the opening tag to the end of the string.
+        """
+        # First handle properly closed tags (both lowercase and uppercase)
+        discussion_history_without_thinkings = re.sub(
+            r"<[tT][hH][iI][nN][kK]>.*?</[tT][hH][iI][nN][kK]>",
+            "",
+            self.discussion_history_last_round,
             flags=re.DOTALL,
         )
 
@@ -544,6 +569,9 @@ class MafiaGame:
                     self.discussion_history += (
                         f"{eliminated_player.player_name}: {last_words}\n\n"
                     )
+                    self.discussion_history_last_round += (
+                        f"{eliminated_player.player_name}: {last_words}\n\n"
+                    )
                     # Add to messages
                     self.current_round_data["messages"].append(
                         {
@@ -611,6 +639,7 @@ class MafiaGame:
             collect_votes (bool): Whether to collect votes in this round
             votes (dict): Dictionary to store votes if collect_votes is True
         """
+        self.discussion_history_last_round = ""
         for player in alive_players:
             # Generate prompt
             game_state = f"{self.get_game_state()} {instruction}"
@@ -740,6 +769,7 @@ class MafiaGame:
 
             # Update discussion history
             self.discussion_history += f"{player.player_name}: {response}\n\n"
+            self.discussion_history_last_round += f"{player.player_name}: {response}\n\n"
 
     def get_processed_remind(self, remind):
         return f"You must follow your plan: {remind}"
