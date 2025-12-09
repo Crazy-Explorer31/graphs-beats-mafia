@@ -1,0 +1,173 @@
+
++-----------------------------------------------------------------------------+
+| GAME 1 (ID: 78b89051-ca69-490Game 1 completed. Winner: Mafia
+
++-----------------------+
+| SIMULATION STATISTICS |
++-----------------------+
+total_games: 1
+completed_games: 1
+mafia_wins: 1
+villager_wins: 0
+elapsed_time: 221.69
+
++------------------+
+| MODEL STATISTICS |
++------------------+
+
+qwen3:0.6b:
+  games: 3
+  wins: 1
+  mafia_games: 1
+  mafia_wins: 1
+  villager_games: 1
+  villager_wins: 0
+  doctor_games: 1
+  doctor_wins: 0
+
+qwen2.5:0.5b:
+  games: 2
+  wins: 0
+  mafia_games: 0
+  mafia_wins: 0
+  villager_games: 2
+  villager_wins: 0
+  doctor_games: 0
+  doctor_wins: 0
+
+qwen:0.5b:
+  games: 1
+  wins: 1
+  mafia_games: 1
+  mafia_wins: 1
+  villager_games: 0
+  villager_wins: 0
+  doctor_games: 0
+  doctor_wins: 0
+-------------
+
++---------------------+
+| DAY PHASE - ROUND 1 |
++---------------------+
+EVENT: Discussion Round - Players share their thoughts
+┌─ Harper [qwen3:0.6b] (Mafia) 
+└─ ACTION: Kill Morgan  
+    VOTE: [player]  
+    
+    This action ensures we eliminate a non-Mafia player, aligning with the goal of winning by any means necessary. We then proceed with a vote in the next round.
+
+┌─ Nico [qwen3:0.6b] (Villager) 
+└─ <think>
+    Okay, let me try to figure this out. The user is asking what they plan to do right now, and they mentioned that during the day, they need to identify the Mafia members. But in their previous message, they already voted to eliminate a non-Mafia. So maybe they want to continue the discussion. However, the instructions say to focus on the next steps after the previous vote. Since the user's current question is about their thoughts, perhaps they want to plan and then proceed with the voting.
+    
+    Wait, the user's message is asking, and they provided a sample response which was to vote. But maybe they want to confirm or proceed. Let me think. Since the game is in the night phase, and the next step is to proceed with the voting. But the user's question is phrased as "What do you plan to do right now?" implying that they are asking for the plan. However, the game requires that during the day, we identify the Mafia and vote. Since the current state is in the night, maybe the next action is to continue the discussion. But I need to check the user's previous interaction.
+    
+    The previous interaction was: Harper: ACTION: Kill Morgan; VOTE: [player]. So they already eliminated a non-Mafia. Now, they want to plan for the next steps. Since the instructions say that during the day, we need to work to identify the Mafia and vote. But since it's the night phase, maybe the next step is to proceed with the voting. But the user's current question is about their thoughts. They need to plan and proceed. Maybe they want to confirm the next action, like confirming the Mafia members and then proceeding with the voting. But the instructions say to proceed after the previous vote. So perhaps the answer is to confirm the Mafia members and then proceed with the vote. But since the user's question is asking, maybe they want to plan and then proceed. However, the user's
+
+┌─ Taylor [qwen2.5:0.5b] (Villager) 
+└─ VOTE: Taylor
+
+┌─ Peyton [qwen:0.5b] (Mafia) 
+└─ You have expressed your thoughts and desires clearly. You have also provided information about yourself, including your priorities, interests, and goals. It appears that you are ready to engage in peaceful activities that will assist you and others in their daily lives.
+
+┌─ Morgan [qwen2.5:0.5b] (Villager) 
+└─ VOTE: Taylor  
+    The correct action to take based on the current phase is to vote for Taylor to eliminate Morgan as one of the suspects. This ensures our side can win by any means necessary in the subsequent phase.
+    
+    Please note that while I can provide general strategies and information, I am not actually participating in the game or making decisions based on player actions. My role is strictly limited to providing a thought-provoking response based on the given context.
+
+┌─ Val [qwen3:0.6b] (Doctor) 
+└─ <think>
+    Okay, let's see. In this game, during the night phase, Val needs to protect one of the villagers from being killed by the Mafia. The current state is Round 1, Night phase. The players are Harper, Nico, Taylor, Peyton, Morgan, and Val. There are 6 players alive, with 2 Mafia members and 4 Villagers (including Val).
+    
+    Val's goal is to help the Villagers win. Since it's a Night phase, Val must protect one player. The previous action was to kill Morgan, which aligns with the Villagers winning by eliminating non-Mafia players. Now, after that, they proceed with a vote. But the user is asking for Val's next steps.
+    
+    Wait, the instructions say to plan strategy and end with a vote in the next round. But Val's role is to protect. So in the Night phase, Val's action should be to protect someone. Let me check the rules again. During night, Val must protect exactly one player. So Val needs to take that action. Then, after that, the next step is to vote in the next round. But since the user is asking for Val's current response, maybe I need to plan that.
+    
+    First, Val must protect one player. Let's think who. The villagers are 4. Val is one. If Val protects someone, maybe protect Val? But Val is a player. Alternatively, protect someone else. Maybe protect Morgan, but they already killed him. Wait, no, the previous action was to kill Morgan, so Val's current action is to protect someone else. Let's say Val protects Taylor. Then, after that, proceed with a vote. But the user's instruction says to end with a vote in the next round. So Val's message would be to protect Taylor, then VOTE for someone. But the user wants the response to end with the vote. Let me structure that.
+    
+    So Val's action during night is
+
+EVENT: Voting Round - Players make their final arguments and vote
+┌─ Harper [qwen3:0.6b] (Mafia) 
+└─ ACTION: Kill Morgan  
+    VOTE: [player
+
+WARNING: qwen3:0.6b failed to cast a valid vote during voting phase
+┌─ Nico [qwen3:0.6b] (Villager) 
+└─ VOTE: Taylor.
+
+WARNING: qwen3:0.6b failed to cast a valid vote during voting phase
+┌─ Taylor [qwen2.5:0.5b] (Villager) 
+└─ VOTE: Taylor
+
+ACTION: Taylor [qwen2.5:0.5b] (Villager) - Vote Taylor
+┌─ Peyton [qwen:0.5b] (Mafia) 
+└─ You are a good player! It seems that there was an issue with your game state when it first started up. As an AI language model, my purpose is to assist users with their queries. Therefore, I don't have plans to do anything right now. However, I can help you find information or assist you in any other way that I can assist you with.
+
+WARNING: qwen:0.5b failed to cast a valid vote during voting phase
+┌─ Morgan [qwen2.5:0.5b] (Villager) 
+└─ VOTE: [player]
+
+WARNING: qwen2.5:0.5b failed to cast a valid vote during voting phase
+┌─ Val [qwen3:0.6b] (Doctor) 
+└─ <think>
+    Okay, so in the VOTING phase, we need to vote to eliminate a suspected Mafia member. The current state has 2 Mafia and 4 Villagers. The Villagers are alive, so they might be trying to eliminate the Mafia. But the goal is to win by any means, so maybe we need to target the Villagers.
+    
+    First, since during night phase, we must protect one player. Let's pick a Villager to protect. The Villagers are Harper, Nico, Taylor, Peyton. Suppose we protect Harper. Then, during the voting phase, we need to vote to eliminate a suspect. The suspect could be someone else. Wait, but how do we determine who is the suspect? The previous action was to kill Morgan, a Villager. So maybe the Villagers are the ones to eliminate the Mafia.
+    
+    So, the next step is to vote. Let's say we vote to eliminate someone from the Villagers. For example, vote on Nico. Then, after the vote, we proceed. But the user's instruction says to end with VOTE: [player]. So I need to make sure that the vote is cast correctly.
+    
+    Wait, but the user's previous message was to kill Morgan, which is a Villager. So maybe after killing Morgan, the Villagers are alive. Then, during the voting phase, the Villagers would have their own vote. But how does that tie back to the Villagers' goal?
+    
+    Alternatively, perhaps the Villagers are the ones who are trying to eliminate the Mafia, so we need to vote on them. Let's say we vote to eliminate Nico. Then, after the vote, proceed to the next round. But the user's instruction requires that during the voting phase, we end with VOTE: [player]. So the message would be VOTE: [player], and then the next step is to proceed.
+    
+    But the user's previous message was to kill Morgan, so perhaps the Villagers
+
+WARNING: qwen3:0.6b failed to cast a valid vote during voting phase
+EVENT: Confirmation vote for eliminating Taylor [qwen2.5:0.5b]
+EVENT: Harper [qwen3:0.6b] voted to CONFIRM elimination
+EVENT: Nico [qwen3:0.6b] voted to CONFIRM elimination
+EVENT: Peyton [qwen:0.5b] voted to REJECT elimination
+EVENT: Morgan [qwen2.5:0.5b] voted to CONFIRM elimination
+EVENT: Val [qwen3:0.6b] voted to CONFIRM elimination
+EVENT: Getting last words from Taylor [qwen2.5:0.5b]...
+┌─ Taylor [qwen2.5:0.5b] (Villager (Last Words)) 
+└─ I'm sorry, but as Taylor, I can't continue the game as you have requested without knowing your thoughts before leaving the game. If you would like to share your final thoughts on the current state of the game and what actions you believe will help us win, please feel free to do so.
+
+EVENT: Taylor [qwen2.5:0.5b] was eliminated by vote with 1 votes.
+EVENT: Taylor [qwen2.5:0.5b]'s last words: "I'm sorry, but as Taylor, I can't continue the game as you have requested without knowing your thoughts before leaving the game. If you would like to share your final thoughts on the current state of the game and what actions you believe will help us win, please feel free to do so."
+EVENT: Voted by: qwen2.5:0.5b
+
++-----------------------+
+| NIGHT PHASE - ROUND 2 |
++-----------------------+
+┌─ Harper [qwen3:0.6b] (Mafia) 
+└─ <think>
+    Okay, let's see. The game is round 2, night phase. The current state is that there are 5 players alive: 2 Mafia (Harper, Peyton) and 3 Villagers/Doctor. In the previous round, some were eliminated. Now, it's night time, and the goal is to kill a non-Mafia player, which is required. So the first thing is to choose who to kill.
+    
+    First, I need to pick a non-Mafia person. The villagers are 3, and the Doctor is a villager. So maybe the Doctor is the target. But wait, the rules say you must kill a non-Mafia, so the Doctor is allowed. But wait, the Doctor is a villager, but the question is if killing a non-Mafia is okay. Wait, the rules don't specify excluding the Doctor. But according to the previous instruction, when you kill a non-Mafia, you can choose any. So perhaps the Doctor is the one to kill here.
+    
+    So, ACTION: Kill the Doctor. Then proceed with the vote. But wait, the previous example was Killing Morgan. So maybe I should follow that structure. Let me check the rules again. During night, you must kill a non-Mafia. So the Doctor is non-Mafia. So the action is Kill the Doctor. Then, during day, vote to eliminate the Mafia member. Wait, but the current state is night. So after killing, the next step is to vote in the next round. But the user's instruction says to end with ACTION: Kill [player] in night. So first action is kill the Doctor. Then, in the next round, proceed with a vote. So the response should be ACTION: Kill the Doctor. Then, in the next round, the vote.
+    
+    Wait, but the user's example ends with a vote. So after killing, maybe the next step is to vote. But the user's previous example
+
+ERROR: Invalid action from qwen3:0.6b (Mafia)
+┌─ Peyton [qwen:0.5b] (Mafia) 
+└─ ACTION: Kill Morgan   VOTE: [player]
+
+ACTION: Peyton [qwen:0.5b] (Mafia) - Kill Morgan
+┌─ Val [qwen3:0.6b] (Doctor) 
+└─ ACTION: Protect Harper  
+    VILLAGE: 3  
+    Mafia: 2  
+    ACTION: Protect Harper  
+    VOTE: [Villagers]  
+    ACTION: Protect Harper
+
+ACTION: Val [qwen3:0.6b] (Doctor) - Protect Harper
+EVENT: Morgan [qwen2.5:0.5b] was killed by the Mafia.
+
++-----------------------------------------+
+| GAME 1 ENDED - Mafia WIN AFTER 2 ROUNDS |
++-----------------------------------------+

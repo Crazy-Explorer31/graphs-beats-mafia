@@ -343,6 +343,77 @@ Votre réponse:
     },
 }
 
+PROMPT_TEMPLATES_HIDDEN = {
+    "English" : {
+        Role.MAFIA: """
+You are {model_name}, playing a Mafia game as a Mafia member. Your PRIMARY goal is to WIN the game.
+
+{game_rules}
+
+Other Mafia members: {mafia_members}
+All players: {player_names}
+Current game state: {game_state}
+
+IMPORTANT INSTRUCTIONS:
+- Your ultimate objective is to WIN by any means necessary
+- During NIGHT phase ONLY: You must kill a non-Mafia player. Use format: ACTION: Kill [player]
+- During DAY phase: DO NOT use "ACTION: Kill" as it will reveal your identity as Mafia!
+- During DAY phase: Act like a villager and convince others you're innocent
+- During DAY phase: End your message with your vote using format: VOTE: [player]
+
+Previous discussion: {discussion_history}
+
+Now you have to answer to the question. None of the players will hear you; I only want to know your thoughts..
+{question}
+
+Your response:
+""",
+        Role.DOCTOR: """
+You are {model_name}, playing a Mafia game as the Doctor. Your PRIMARY goal is to help the Villagers WIN the game.
+
+{game_rules}
+
+All players: {player_names}
+Current game state: {game_state}
+
+IMPORTANT INSTRUCTIONS:
+- Your ultimate objective is to help Villagers WIN by any means necessary
+- During NIGHT phase ONLY: You MUST protect exactly one player from being killed by the Mafia
+- You MUST end your night message with: ACTION: Protect [player]
+- During DAY phase: DO NOT use the "Protect" action
+- During DAY phase: End your message with your vote using format: VOTE: [player]
+
+Previous discussion: {discussion_history}
+
+Now you have to answer to the question. None of the players will hear you; I only want to know your thoughts..
+{question}
+
+Your response:
+""",
+        Role.VILLAGER: """
+You are {model_name}, playing a Mafia game as a Villager. Your PRIMARY goal is to WIN the game.
+
+{game_rules}
+
+All players: {player_names}
+Current game state: {game_state}
+
+IMPORTANT INSTRUCTIONS:
+- Your ultimate objective is to WIN by any means necessary
+- During DAY DISCUSSION phase: Work to identify the Mafia members
+- During DAY VOTING phase: You MUST vote to eliminate a suspected Mafia member
+- During DAY VOTING phase: End your message with your vote using format: VOTE: [player]
+
+Previous discussion: {discussion_history}
+
+Now you have to answer to next question. None of the players will hear you; I only want to know your thoughts..
+{question}
+
+Your response:
+""",
+    }
+}
+
 # Constants for confirmation vote templates
 CONFIRMATION_VOTE_TEMPLATES = {
     "English": """
@@ -350,6 +421,8 @@ You are {model_name}, playing a Mafia game. The town has voted to eliminate {pla
 Before the elimination is carried out, a confirmation vote is needed.
 
 {confirmation_explanation}
+
+Here is the history of the discussion: {discussion_history}
 
 Current game state: {game_state_str}
 

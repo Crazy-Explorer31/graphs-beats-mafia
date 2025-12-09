@@ -9,22 +9,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # OpenRouter API settings
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "your_openrouter_api_key_here")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # Ollama API settings
 OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
-OLLAMA_MODELS = [
-    "llama3.2:latest",
-    "llama3.1:latest",
-    "llama3:latest",
-    "mistral:latest",
-    "codellama:latest",
-    "gemma2:latest",
-    "qwen2.5:latest",
-    "phi3:latest",
-]
 
+'''
+OLLAMA_MODELS = [
+    "qwen:0.5b",
+    "qwen2.5:0.5b",
+    "qwen3:0.6b",
+    "qwen:0.5b",
+    "qwen2.5:0.5b",
+    "qwen3:0.6b",
+    "qwen3:0.6b",
+]
+'''
+OLLAMA_MODELS = ["qwen2.5:0.5b"] * 6
+# OLLAMA_MODELS = ["qwen2.5:7b"] * 6
 # Firebase settings
 FIREBASE_CREDENTIALS_PATH = (
     "firebase_credentials.json"  # Path to your Firebase credentials file
@@ -86,7 +89,7 @@ FREE_MODELS = [
 # Game configuration
 NUM_GAMES = int(os.getenv("NUM_GAMES", 1))  # Number of games to simulate
 PLAYERS_PER_GAME = int(
-    os.getenv("PLAYERS_PER_GAME", 8)
+    os.getenv("PLAYERS_PER_GAME", 6)
 )  # Number of players in each game
 MAFIA_COUNT = int(os.getenv("MAFIA_COUNT", 2))  # Number of Mafia players
 DOCTOR_COUNT = int(os.getenv("DOCTOR_COUNT", 1))  # Number of Doctor players
