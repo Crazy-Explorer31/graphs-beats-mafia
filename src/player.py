@@ -177,7 +177,6 @@ class Player:
 
             # Get role probabilities
             probs = self.graph.nodes[player.player_name]['role_probabilities']
-            mafia_prob = probs.get("Mafia", 0.0)
 
             # Format trust level
             if trust > 0.5:
@@ -191,7 +190,15 @@ class Player:
             else:
                 trust_level = "neutral"
 
-            my_trust.append(f"  - {player.player_name}: {trust_level}, Mafia prob: {mafia_prob:.0%}")
+            # For Mafia: we know exact roles of other mafia
+            if self.role == Role.MAFIA:
+                is_mafia = probs.get("Mafia", 0.0) == 1.0
+                role_info = f"Role: {'Mafia' if is_mafia else 'Non-mafia (Villager/Doctor)'}"
+                my_trust.append(f"  - {player.player_name}: {trust_level}, {role_info}")
+            else:
+                # For Villagers and Doctor: show Mafia probability
+                mafia_prob = probs.get("Mafia", 0.0)
+                my_trust.append(f"  - {player.player_name}: {trust_level}, Mafia prob: {mafia_prob:.0%}")
 
         if my_trust:
             lines.append("My trust in others:")
@@ -206,12 +213,26 @@ class Player:
                 continue
 
             trust = self.graph[self.player_name][player.player_name]['trust']
-            mafia_prob = self.graph.nodes[player.player_name]['role_probabilities'].get("Mafia", 0.0)
+            probs = self.graph.nodes[player.player_name]['role_probabilities']
 
+            if self.role == Role.MAFIA:
+                # For Mafia: suspicious if low trust (distrustful non-mafia)
+                is_mafia = probs.get("Mafia", 0.0) == 1.0
+                # Only consider non-mafia players as suspicious
+                if not is_mafia:
+                    # Suspicion is based on distrust (negative trust)
+                    suspicion_value = -trust  # Higher value means more suspicious
+                    if suspicion_value > 0.1:  # Only if actually distrustful
+                        suspicious.append((player.player_name, suspicion_value))
+            else:
+                # For others: suspicious if high probability of being Mafia
+                suspicion_value = probs.get("Mafia", 0.0)
+                if suspicion_value > 0.4:
+                    suspicious.append((player.player_name, suspicion_value))
+
+            # Trusted players (for all roles)
             if trust > 0.3:
                 trusted.append((player.player_name, trust))
-            if mafia_prob > 0.4:
-                suspicious.append((player.player_name, mafia_prob))
 
         # Take top 2-3
         trusted.sort(key=lambda x: x[1], reverse=True)
@@ -222,8 +243,12 @@ class Player:
             lines.append(f"\nMost trusted: {top_trusted}")
 
         if suspicious:
-            top_suspicious = ", ".join([f"{name}" for name, _ in suspicious[:2]])
-            lines.append(f"Most suspicious: {top_suspicious}")
+            if self.role == Role.MAFIA:
+                top_suspicious = ", ".join([f"{name}" for name, _ in suspicious[:2]])
+                lines.append(f"Most distrustful (suspicious non-mafia): {top_suspicious}")
+            else:
+                top_suspicious = ", ".join([f"{name}" for name, _ in suspicious[:2]])
+                lines.append(f"Most suspicious (likely Mafia): {top_suspicious}")
 
         # Key mutual relationships
         mutual_relations = []
