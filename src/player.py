@@ -273,6 +273,250 @@ class Player:
             lines.extend(mutual_relations[:3])
 
         return "\n".join(lines)
+
+    def update_graph(self, all_players, current_round):
+        """
+        Update the subjective trust graph based on the last round's discussion.
+        Uses LLM to evaluate trust changes and role probability updates.
+
+        Args:
+            all_players (list): List of all players in the game.
+            current_round (int): Current round number.
+        """
+        if not self.use_graph or self.graph is None:
+            return
+
+        # Get last round's discussion
+        last_round_history = self.discussion_history_last_round_without_thinkings()
+
+        if not last_round_history or last_round_history.strip() == "":
+            return  # Nothing to update
+
+        # Update alive status in graph
+        for player in all_players:
+            if player.player_name in self.graph.nodes:
+                self.graph.nodes[player.player_name]['alive'] = player.alive
+
+        alive_players = [p for p in all_players if p.alive]
+
+        # Skip if only self alive
+        if len(alive_players) <= 1:
+            return
+
+        # Build prompt for LLM evaluation
+        prompt = self._build_graph_update_prompt(alive_players, last_round_history, current_round)
+
+        # Get LLM response
+        try:
+            response = get_llm_response(self.model_name, prompt)
+            self._apply_graph_updates(response, alive_players, current_round)
+        except Exception as e:
+            print(f"[{self.player_name}] Graph update failed: {e}")
+
+    def _build_graph_update_prompt(self, alive_players, last_round_history, current_round):
+        """
+        Build prompt for LLM to evaluate trust and role probabilities.
+        """
+        # Current graph state
+        graph_state = self.graph_to_prompt(alive_players)
+
+        # Role-specific context
+        if self.role == Role.MAFIA:
+            # Get known mafia members
+            mafia_members = [
+                p.player_name for p in alive_players
+                if self.graph.nodes[p.player_name]['role_probabilities'].get("Mafia", 0) == 1.0
+                   and p.player_name != self.player_name
+            ]
+            role_context = f"""You are MAFIA. Your goal is to eliminate villagers without being detected.
+    Known mafia allies: {', '.join(mafia_members) if mafia_members else 'None (you are alone)'}
+    You should evaluate who is suspicious of you and who might be easy targets."""
+        elif self.role == Role.DOCTOR:
+            role_context = """You are DOCTOR. Your goal is to identify mafia and protect key villagers.
+    Pay attention to who seems to be leading the town and who might be targeted."""
+        else:
+            role_context = """You are VILLAGER. Your goal is to identify and eliminate mafia members.
+    Look for suspicious behavior, inconsistencies, and unusual voting patterns."""
+
+        # Players to evaluate (exclude self, and for mafia - exclude known mafia)
+        players_to_evaluate = []
+        for p in alive_players:
+            if p.player_name == self.player_name:
+                continue
+            # Mafia doesn't need to re-evaluate known mafia
+            if self.role == Role.MAFIA:
+                probs = self.graph.nodes[p.player_name]['role_probabilities']
+                if probs.get("Mafia", 0) == 1.0:
+                    continue
+            players_to_evaluate.append(p.player_name)
+
+        if not players_to_evaluate:
+            return None
+
+        # Build the prompt
+        prompt = f"""You are {self.player_name} analyzing Round {current_round} of a Mafia game.
+
+    {role_context}
+
+    === LAST ROUND'S DISCUSSION ===
+    {last_round_history}
+
+    === YOUR CURRENT ASSESSMENTS ===
+    {graph_state}
+
+    === TASK ===
+    Based on the discussion, update your assessment of these players: {', '.join(players_to_evaluate)}
+
+    For each player, evaluate:
+    1. **mafia_probability**: How likely they are Mafia (0.0 = definitely innocent, 1.0 = definitely Mafia)
+    2. **trust**: Your trust in them (-1.0 = complete distrust, 0.0 = neutral, 1.0 = complete trust)
+
+    Also note any trust/distrust you observed BETWEEN other players.
+
+    Consider:
+    - Who accused whom and how convincingly?
+    - Who defended whom?
+    - Voting patterns and flip-flopping
+    - Emotional reactions vs logical arguments
+    - Who tries to lead vs who stays quiet?
+
+    Respond ONLY with valid JSON:
+    {{
+        "player_assessments": {{
+            "PlayerName": {{
+                "mafia_probability": 0.3,
+                "trust": 0.2,
+                "reasoning": "brief explanation"
+            }}
+        }},
+        "observed_relationships": [
+            {{
+                "from": "Player1",
+                "to": "Player2",
+                "trust_change": 0.3,
+                "reasoning": "Player1 defended Player2"
+            }}
+        ]
+    }}
+    """
+        return prompt
+
+    def _apply_graph_updates(self, response, alive_players, current_round):
+        """
+        Parse LLM response and apply updates to the graph.
+        Uses incremental updates (blending old and new values).
+        """
+        import json
+
+        # Extract JSON from response
+        try:
+            # Try to find JSON block
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if not json_match:
+                print(f"[{self.player_name}] No JSON found in graph update response")
+                return
+            updates = json.loads(json_match.group())
+        except json.JSONDecodeError as e:
+            print(f"[{self.player_name}] Failed to parse graph update JSON: {e}")
+            return
+
+        alive_names = {p.player_name for p in alive_players}
+
+        # Blending factor: how much weight to give new assessment vs old
+        # Higher = more weight to new information
+        BLEND_FACTOR = 0.6
+
+        # Apply player assessments
+        if "player_assessments" in updates:
+            for player_name, assessment in updates["player_assessments"].items():
+                # Validate player
+                if player_name not in self.graph.nodes:
+                    continue
+                if player_name == self.player_name:
+                    continue
+                if player_name not in alive_names:
+                    continue
+
+                # Skip known mafia for mafia players
+                if self.role == Role.MAFIA:
+                    current_probs = self.graph.nodes[player_name]['role_probabilities']
+                    if current_probs.get("Mafia", 0) == 1.0:
+                        continue
+
+                # Update role probabilities
+                if "mafia_probability" in assessment:
+                    try:
+                        new_mafia_prob = float(assessment["mafia_probability"])
+                        new_mafia_prob = max(0.0, min(1.0, new_mafia_prob))
+
+                        # Blend with old probability
+                        old_probs = self.graph.nodes[player_name]['role_probabilities']
+                        old_mafia_prob = old_probs.get("Mafia", 0.5)
+                        blended_mafia = old_mafia_prob * (1 - BLEND_FACTOR) + new_mafia_prob * BLEND_FACTOR
+
+                        # Distribute remaining probability
+                        remaining = 1.0 - blended_mafia
+                        self.graph.nodes[player_name]['role_probabilities'] = {
+                            "Mafia": blended_mafia,
+                            "Villager": remaining * 0.75,  # More villagers than doctors typically
+                            "Doctor": remaining * 0.25
+                        }
+                    except (ValueError, TypeError):
+                        pass
+
+                # Update trust edge from self to this player
+                if "trust" in assessment:
+                    try:
+                        new_trust = float(assessment["trust"])
+                        new_trust = max(-1.0, min(1.0, new_trust))
+
+                        # Blend with old trust
+                        old_trust = self.graph[self.player_name][player_name].get('trust', 0.0)
+                        blended_trust = old_trust * (1 - BLEND_FACTOR) + new_trust * BLEND_FACTOR
+
+                        self.graph[self.player_name][player_name]['trust'] = blended_trust
+                        self.graph[self.player_name][player_name]['last_updated'] = current_round
+
+                        # Store reasoning as evidence
+                        if "reasoning" in assessment:
+                            evidence = self.graph[self.player_name][player_name].get('evidence', [])
+                            evidence.append({
+                                'round': current_round,
+                                'reason': assessment["reasoning"][:100]  # Truncate
+                            })
+                            self.graph[self.player_name][player_name]['evidence'] = evidence[-5:]  # Keep last 5
+
+                    except (ValueError, TypeError):
+                        pass
+
+        # Apply observed relationships between other players
+        if "observed_relationships" in updates:
+            for rel in updates["observed_relationships"]:
+                try:
+                    from_player = rel.get("from", "")
+                    to_player = rel.get("to", "")
+                    trust_change = float(rel.get("trust_change", 0))
+
+                    # Validate
+                    if from_player not in alive_names or to_player not in alive_names:
+                        continue
+                    if from_player == self.player_name:
+                        continue  # Already handled above
+                    if from_player == to_player:
+                        continue
+                    if from_player not in self.graph or to_player not in self.graph[from_player]:
+                        continue
+
+                    # Apply as incremental change (not absolute)
+                    trust_change = max(-0.5, min(0.5, trust_change))  # Limit change magnitude
+                    old_trust = self.graph[from_player][to_player].get('trust', 0.0)
+                    new_trust = max(-1.0, min(1.0, old_trust + trust_change))
+
+                    self.graph[from_player][to_player]['trust'] = new_trust
+                    self.graph[from_player][to_player]['last_updated'] = current_round
+
+                except (ValueError, TypeError, KeyError):
+                    continue
     
     def discussion_history_without_thinkings(self):
         return self.game.discussion_history_without_thinkings()
