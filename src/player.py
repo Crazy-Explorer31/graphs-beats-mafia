@@ -567,6 +567,7 @@ class Player:
         if discussion_history is None:
             discussion_history = ""
 
+        context = self._get_discussion_context(all_players, discussion_history)
         # Get list of player names (using visible player names)
         player_names = [p.player_name for p in all_players if p.alive]
 
@@ -600,7 +601,7 @@ class Player:
                 player_names=", ".join(player_names),
                 game_state=game_state,
                 thinking_tag=THINKING_TAGS[language],
-                discussion_history=discussion_history,
+                discussion_history=context,
             )
         elif self.role == Role.DOCTOR:
             # For Doctor
@@ -610,7 +611,7 @@ class Player:
                 player_names=", ".join(player_names),
                 game_state=game_state,
                 thinking_tag=THINKING_TAGS[language],
-                discussion_history=discussion_history,
+                discussion_history=context,
             )
         else:  # Role.VILLAGER
             # For Villagers
@@ -620,7 +621,7 @@ class Player:
                 player_names=", ".join(player_names),
                 game_state=game_state,
                 thinking_tag=THINKING_TAGS[language],
-                discussion_history=discussion_history,
+                discussion_history=context,
             )
 
         return prompt
@@ -645,6 +646,8 @@ class Player:
             discussion_history = ""
         if question is None:
             question = ""
+
+        context = self._get_discussion_context(all_players, discussion_history)
 
         # Get list of player names (using visible player names)
         player_names = [p.player_name for p in all_players if p.alive]
@@ -679,7 +682,7 @@ class Player:
                 player_names=", ".join(player_names),
                 game_state=game_state,
                 question=question,
-                discussion_history=discussion_history,
+                discussion_history=context,
             )
         elif self.role == Role.DOCTOR:
             # For Doctor
@@ -689,7 +692,7 @@ class Player:
                 player_names=", ".join(player_names),
                 game_state=game_state,
                 question=question,
-                discussion_history=discussion_history,
+                discussion_history=context,
             )
         else:  # Role.VILLAGER
             # For Villagers
@@ -699,10 +702,69 @@ class Player:
                 player_names=", ".join(player_names),
                 game_state=game_state,
                 question=question,
-                discussion_history=discussion_history,
+                discussion_history=context,
             )
 
         return prompt
+
+    def _get_discussion_context(self, all_players, full_discussion_history):
+        """
+        Get appropriate discussion context based on whether player uses graph.
+
+        For graph users: short recent history + graph state
+        For non-graph users: full history
+
+        Args:
+            all_players (list): List of all players.
+            full_discussion_history (str): Complete discussion history.
+
+        Returns:
+            str: Discussion context to include in prompt.
+        """
+        if not self.use_graph or self.graph is None:
+            # Non-graph players get full history
+            return full_discussion_history
+
+        # === Graph-based players get compressed context ===
+
+        # Try to get last round's discussion
+        last_round = self.discussion_history_last_round_without_thinkings()
+
+        # Fallback logic
+        MIN_CONTEXT_LENGTH = 500  # Minimum useful context
+        MAX_CONTEXT_LENGTH = 3000  # Maximum to avoid token bloat
+
+        if last_round and len(last_round.strip()) >= MIN_CONTEXT_LENGTH:
+            recent_discussion = last_round
+        elif full_discussion_history:
+            # Fallback: take last N characters of full history
+            recent_discussion = full_discussion_history[-MAX_CONTEXT_LENGTH:]
+            # Try to start from a clean line break
+            newline_pos = recent_discussion.find('\n')
+            if 0 < newline_pos < 200:
+                recent_discussion = recent_discussion[newline_pos + 1:]
+            recent_discussion = f"[...previous discussion...]\n{recent_discussion}"
+        else:
+            recent_discussion = "[No discussion yet]"
+
+        # Truncate if too long
+        if len(recent_discussion) > MAX_CONTEXT_LENGTH:
+            recent_discussion = recent_discussion[-MAX_CONTEXT_LENGTH:]
+            newline_pos = recent_discussion.find('\n')
+            if 0 < newline_pos < 200:
+                recent_discussion = recent_discussion[newline_pos + 1:]
+            recent_discussion = f"[...truncated...]\n{recent_discussion}"
+
+        # Get graph representation
+        graph_prompt = self.graph_to_prompt(all_players)
+
+        # Combine graph + recent discussion
+        context = f"""{graph_prompt}
+
+    === RECENT DISCUSSION ===
+    {recent_discussion}"""
+
+        return context
 
     def get_response(self, prompt):
         """
@@ -793,7 +855,7 @@ class Player:
             return self._find_target_player(target_name, all_players)
         return None
 
-    def get_confirmation_vote(self, game_state, discussion_history):
+    def get_confirmation_vote(self, game_state, all_players, discussion_history):
         """
         Get a confirmation vote from the player on whether to eliminate another player.
 
@@ -805,6 +867,8 @@ class Player:
         """
         player_to_eliminate = game_state["confirmation_vote_for"]
         game_state_str = game_state["game_state"]
+
+        context = self._get_discussion_context(all_players, discussion_history)
 
         # Get the appropriate language, defaulting to English if not supported
         language = (
@@ -825,7 +889,7 @@ class Player:
             confirmation_explanation=confirmation_explanation,
             game_state_str=game_state_str,
             thinking_tag=THINKING_TAGS[language],
-            discussion_history=discussion_history
+            discussion_history=context
         )
 
         response = self.get_response(prompt)

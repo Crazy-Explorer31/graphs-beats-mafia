@@ -117,8 +117,11 @@ class MafiaGame:
             else:
                 player_name = random.choice(available_names)
 
+            use_graph = False
+            if roles[i] == Role.VILLAGER:
+                use_graph = True
             # Create player with both model_name and player_name
-            player = Player(model_name, player_name, roles[i], language=self.language, game=self)
+            player = Player(model_name, player_name, roles[i], language=self.language, game=self, use_graph=use_graph)
             self.players.append(player)
 
             # Add to role-specific lists
@@ -844,7 +847,7 @@ class MafiaGame:
             }
 
             # Get player's vote
-            vote = player.get_confirmation_vote(player_state, self.discussion_history_without_thinkings())
+            vote = player.get_confirmation_vote(player_state, self.players, self.discussion_history_without_thinkings())
 
             # Validate and record vote
             if vote.lower() in ["agree", "yes", "confirm", "true"]:
@@ -864,6 +867,30 @@ class MafiaGame:
         is_confirmed = len(confirmation_votes["agree"]) > len(voting_players) / 2
 
         return is_confirmed, confirmation_votes
+
+    def init_all_graphs(self):
+        """Initialize graphs for all players at game start."""
+        for player in self.players:
+            if player.use_graph:
+                player.init_graph(self.players)
+                print(f"[Graph] Initialized graph for {player.player_name}")
+
+    def update_all_graphs(self, current_round):
+        """
+        Update graphs for all players who use graph-based reasoning.
+        Should be called at the end of each round.
+
+        Args:
+            current_round (int): Current round number.
+        """
+        all_players = self.players
+        for player in self.get_alive_players():
+            if player.alive and player.use_graph:
+                try:
+                    player.update_graph(all_players, current_round)
+                    print(f"[Graph] Updated graph for {player.player_name}")
+                except Exception as e:
+                    print(f"[Graph] Failed to update graph for {player.player_name}: {e}")
 
     def run_game(self):
         """
@@ -889,6 +916,10 @@ class MafiaGame:
             if game_over:
                 break
 
+            print(f'{self.round_number=}')
+            if self.round_number == 1:
+                self.init_all_graphs()
+
             # Execute day phase
             self.execute_day_phase()
 
@@ -899,6 +930,8 @@ class MafiaGame:
 
             # Execute night phase
             self.execute_night_phase()
+
+            self.update_all_graphs(self.round_number)
 
         # Add final round data if not already added
         if self.current_round_data["round_number"] > 0:
