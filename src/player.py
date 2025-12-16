@@ -882,9 +882,20 @@ class Player:
             player_to_eliminate=player_to_eliminate
         )
 
+        if self.role == Role.VILLAGER:
+            role_string = "Villager"
+        elif self.role == Role.DOCTOR:
+            role_string = "Doctor"
+        elif self.role == Role.MAFIA:
+            role_string = "Mafia"
+        else:
+            print("Error: role not found")
+            role_string = "Participant"
+
         # Generate prompt based on language
         prompt = CONFIRMATION_VOTE_TEMPLATES[language].format(
             model_name=self.player_name,  # Use player_name in prompts
+            role_string=role_string,
             player_to_eliminate=player_to_eliminate,
             confirmation_explanation=confirmation_explanation,
             game_state_str=game_state_str,

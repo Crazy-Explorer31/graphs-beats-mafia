@@ -118,7 +118,7 @@ class MafiaGame:
                 player_name = random.choice(available_names)
 
             use_graph = False
-            if roles[i] == Role.VILLAGER:
+            if roles[i] == Role.VILLAGER or roles[i] == Role.DOCTOR:
                 use_graph = True
             # Create player with both model_name and player_name
             player = Player(model_name, player_name, roles[i], language=self.language, game=self, use_graph=use_graph)
@@ -332,10 +332,10 @@ class MafiaGame:
             # Count votes for each target
             target_counts = {}
             for target in mafia_targets:
-                if target.model_name in target_counts:
-                    target_counts[target.model_name] += 1
+                if target.player_name in target_counts:
+                    target_counts[target.player_name] += 1
                 else:
-                    target_counts[target.model_name] = 1
+                    target_counts[target.player_name] = 1
 
             # Find target with most votes
             max_votes = 0
@@ -343,7 +343,7 @@ class MafiaGame:
                 if votes > max_votes:
                     max_votes = votes
                     for player in self.get_alive_players():
-                        if player.model_name == target_name:
+                        if player.player_name == target_name:
                             kill_target = player
                             break
 
@@ -511,7 +511,7 @@ class MafiaGame:
             if vote_count > max_votes:
                 max_votes = vote_count
                 for player in alive_players:
-                    if player.model_name == target_name:
+                    if player.player_name == target_name:
                         eliminated_player = player
                         break
 
@@ -541,7 +541,7 @@ class MafiaGame:
             else:
                 # Get last words from the player before elimination
                 last_words = self.get_last_words(
-                    eliminated_player, vote_counts[eliminated_player.model_name]
+                    eliminated_player, vote_counts[eliminated_player.player_name]
                 )
 
                 eliminated_player.alive = False
@@ -559,7 +559,7 @@ class MafiaGame:
                 self.current_round_data["vote_details"] = vote_details
 
                 # Include vote count in the outcome text
-                outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.model_name]} votes."
+                outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.player_name]} votes."
                 self.current_round_data["outcome"] += f" {outcome_text}"
                 self.logger.event(outcome_text, Color.YELLOW)
 
@@ -753,7 +753,7 @@ class MafiaGame:
             if collect_votes and votes is not None:
                 vote_target = player.parse_day_vote(response, alive_players)
                 if vote_target:
-                    votes[player.model_name] = vote_target.model_name
+                    votes[player.player_name] = vote_target.player_name
                     action_text = f"Vote {vote_target.player_name}"
                     self.current_round_data["actions"][player.model_name] = action_text
                     self.logger.player_action(
@@ -851,13 +851,13 @@ class MafiaGame:
 
             # Validate and record vote
             if vote.lower() in ["agree", "yes", "confirm", "true"]:
-                confirmation_votes["agree"].append(player.model_name)
+                confirmation_votes["agree"].append(player.player_name)
                 self.logger.event(
                     f"{player.player_name} [{player.model_name}] voted to CONFIRM elimination",
                     Color.GREEN,
                 )
             else:
-                confirmation_votes["disagree"].append(player.model_name)
+                confirmation_votes["disagree"].append(player.player_name)
                 self.logger.event(
                     f"{player.player_name} [{player.model_name}] voted to REJECT elimination",
                     Color.RED,
