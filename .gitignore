@@ -54,3 +54,4 @@ scripts/remote-config.sh
 */node_modules
 
 .cursor
+logs/

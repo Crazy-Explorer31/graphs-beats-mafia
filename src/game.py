@@ -916,7 +916,7 @@ class MafiaGame:
             if game_over:
                 break
 
-            print(f'{self.round_number=}')
+            print(f'round_number={self.round_number}')
             if self.round_number == 1:
                 self.init_all_graphs()
 
