@@ -9,7 +9,6 @@ from collections import defaultdict
 import argparse
 import config
 from game import MafiaGame
-from firebase_manager import FirebaseManager
 from logger import GameLogger, Color
 
 
@@ -60,9 +59,6 @@ def run_simulation(
 
     start_time = time.time()
 
-    # Initialize Firebase
-    firebase = FirebaseManager()
-
     # Initialize statistics
     stats = {
         "total_games": num_games,
@@ -108,19 +104,6 @@ def run_simulation(
                         language,
                         critic_review,
                     ) = future.result()
-
-                    # Store results in Firebase
-                    if firebase.initialized:
-                        firebase.store_game_result(
-                            game_id, winner, participants, language=language
-                        )
-                        firebase.store_game_log(
-                            game_id,
-                            rounds_data,
-                            participants,
-                            language=language,
-                            critic_review=critic_review,
-                        )
 
                     # Update statistics
                     stats["completed_games"] += 1
@@ -184,19 +167,6 @@ def run_simulation(
                     language,
                     critic_review,
                 ) = run_single_game(i, game_language, models)
-
-                # Store results in Firebase
-                if firebase.initialized:
-                    firebase.store_game_result(
-                        game_id, winner, participants, language=language
-                    )
-                    firebase.store_game_log(
-                        game_id,
-                        rounds_data,
-                        participants,
-                        language=language,
-                        critic_review=critic_review,
-                    )
 
                 # Update statistics
                 stats["completed_games"] += 1

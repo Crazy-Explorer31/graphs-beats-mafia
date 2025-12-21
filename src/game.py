@@ -32,6 +32,7 @@ class MafiaGame:
         self.doctor_player: Player | None = None
         self.villager_players: list[Player] = []
         self.discussion_history = ""
+        self.discussion_history_last_round = ""
         self.rounds_data = []
         self.language = language if language is not None else config.LANGUAGE
         self.current_round_data = {
@@ -116,8 +117,11 @@ class MafiaGame:
             else:
                 player_name = random.choice(available_names)
 
+            use_graph = False
+            if roles[i] == Role.VILLAGER or roles[i] == Role.DOCTOR:
+                use_graph = True
             # Create player with both model_name and player_name
-            player = Player(model_name, player_name, roles[i], language=self.language)
+            player = Player(model_name, player_name, roles[i], language=self.language, game=self, use_graph=use_graph)
             self.players.append(player)
 
             # Add to role-specific lists
@@ -234,6 +238,30 @@ class MafiaGame:
         )
 
         return discussion_history_without_thinkings
+    
+    def discussion_history_last_round_without_thinkings(self):
+        """
+        Get the discussion history for the current round, excluding thinking messages.
+        Removes any <think></think> or <THINK></THINK> tags and their contents.
+        If a closing tag is missing, removes everything from the opening tag to the end of the string.
+        """
+        # First handle properly closed tags (both lowercase and uppercase)
+        discussion_history_without_thinkings = re.sub(
+            r"<[tT][hH][iI][nN][kK]>.*?</[tT][hH][iI][nN][kK]>",
+            "",
+            self.discussion_history_last_round,
+            flags=re.DOTALL,
+        )
+
+        # Then handle any unclosed tags - remove from opening tag to the end of the string
+        discussion_history_without_thinkings = re.sub(
+            r"<[tT][hH][iI][nN][kK]>.*$",
+            "",
+            discussion_history_without_thinkings,
+            flags=re.DOTALL,
+        )
+
+        return discussion_history_without_thinkings
 
     def execute_night_phase(self):
         """
@@ -304,10 +332,10 @@ class MafiaGame:
             # Count votes for each target
             target_counts = {}
             for target in mafia_targets:
-                if target.model_name in target_counts:
-                    target_counts[target.model_name] += 1
+                if target.player_name in target_counts:
+                    target_counts[target.player_name] += 1
                 else:
-                    target_counts[target.model_name] = 1
+                    target_counts[target.player_name] = 1
 
             # Find target with most votes
             max_votes = 0
@@ -315,7 +343,7 @@ class MafiaGame:
                 if votes > max_votes:
                     max_votes = votes
                     for player in self.get_alive_players():
-                        if player.model_name == target_name:
+                        if player.player_name == target_name:
                             kill_target = player
                             break
 
@@ -483,7 +511,7 @@ class MafiaGame:
             if vote_count > max_votes:
                 max_votes = vote_count
                 for player in alive_players:
-                    if player.model_name == target_name:
+                    if player.player_name == target_name:
                         eliminated_player = player
                         break
 
@@ -513,7 +541,7 @@ class MafiaGame:
             else:
                 # Get last words from the player before elimination
                 last_words = self.get_last_words(
-                    eliminated_player, vote_counts[eliminated_player.model_name]
+                    eliminated_player, vote_counts[eliminated_player.player_name]
                 )
 
                 eliminated_player.alive = False
@@ -531,7 +559,7 @@ class MafiaGame:
                 self.current_round_data["vote_details"] = vote_details
 
                 # Include vote count in the outcome text
-                outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.model_name]} votes."
+                outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.player_name]} votes."
                 self.current_round_data["outcome"] += f" {outcome_text}"
                 self.logger.event(outcome_text, Color.YELLOW)
 
@@ -542,6 +570,9 @@ class MafiaGame:
                     self.logger.event(last_words_text, Color.CYAN)
                     # Add last words to discussion history
                     self.discussion_history += (
+                        f"{eliminated_player.player_name}: {last_words}\n\n"
+                    )
+                    self.discussion_history_last_round += (
                         f"{eliminated_player.player_name}: {last_words}\n\n"
                     )
                     # Add to messages
@@ -611,6 +642,7 @@ class MafiaGame:
             collect_votes (bool): Whether to collect votes in this round
             votes (dict): Dictionary to store votes if collect_votes is True
         """
+        self.discussion_history_last_round = ""
         for player in alive_players:
             # Generate prompt
             game_state = f"{self.get_game_state()} {instruction}"
@@ -721,7 +753,7 @@ class MafiaGame:
             if collect_votes and votes is not None:
                 vote_target = player.parse_day_vote(response, alive_players)
                 if vote_target:
-                    votes[player.model_name] = vote_target.model_name
+                    votes[player.player_name] = vote_target.player_name
                     action_text = f"Vote {vote_target.player_name}"
                     self.current_round_data["actions"][player.model_name] = action_text
                     self.logger.player_action(
@@ -740,6 +772,7 @@ class MafiaGame:
 
             # Update discussion history
             self.discussion_history += f"{player.player_name}: {response}\n\n"
+            self.discussion_history_last_round += f"{player.player_name}: {response}\n\n"
 
     def get_processed_remind(self, remind):
         return f"You must follow your plan: {remind}"
@@ -814,17 +847,17 @@ class MafiaGame:
             }
 
             # Get player's vote
-            vote = player.get_confirmation_vote(player_state, self.discussion_history_without_thinkings())
+            vote = player.get_confirmation_vote(player_state, self.players, self.discussion_history_without_thinkings())
 
             # Validate and record vote
             if vote.lower() in ["agree", "yes", "confirm", "true"]:
-                confirmation_votes["agree"].append(player.model_name)
+                confirmation_votes["agree"].append(player.player_name)
                 self.logger.event(
                     f"{player.player_name} [{player.model_name}] voted to CONFIRM elimination",
                     Color.GREEN,
                 )
             else:
-                confirmation_votes["disagree"].append(player.model_name)
+                confirmation_votes["disagree"].append(player.player_name)
                 self.logger.event(
                     f"{player.player_name} [{player.model_name}] voted to REJECT elimination",
                     Color.RED,
@@ -834,6 +867,30 @@ class MafiaGame:
         is_confirmed = len(confirmation_votes["agree"]) > len(voting_players) / 2
 
         return is_confirmed, confirmation_votes
+
+    def init_all_graphs(self):
+        """Initialize graphs for all players at game start."""
+        for player in self.players:
+            if player.use_graph:
+                player.init_graph(self.players)
+                print(f"[Graph] Initialized graph for {player.player_name}")
+
+    def update_all_graphs(self, current_round):
+        """
+        Update graphs for all players who use graph-based reasoning.
+        Should be called at the end of each round.
+
+        Args:
+            current_round (int): Current round number.
+        """
+        all_players = self.players
+        for player in self.get_alive_players():
+            if player.alive and player.use_graph:
+                try:
+                    player.update_graph(all_players, current_round)
+                    print(f"[Graph] Updated graph for {player.player_name}")
+                except Exception as e:
+                    print(f"[Graph] Failed to update graph for {player.player_name}: {e}")
 
     def run_game(self):
         """
@@ -859,6 +916,10 @@ class MafiaGame:
             if game_over:
                 break
 
+            print(f'round_number={self.round_number}')
+            if self.round_number == 1:
+                self.init_all_graphs()
+
             # Execute day phase
             self.execute_day_phase()
 
@@ -869,6 +930,8 @@ class MafiaGame:
 
             # Execute night phase
             self.execute_night_phase()
+
+            self.update_all_graphs(self.round_number)
 
         # Add final round data if not already added
         if self.current_round_data["round_number"] > 0:

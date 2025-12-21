@@ -9,8 +9,9 @@ dependencies = [
     "flask==2.3.3",
     "futures==3.0.5",
     "matplotlib==3.10.1",
-    "numpy==2.2.3",
+    "numpy==1.26.4",  # Исправлено
     "python-dotenv==1.0.0",
     "requests==2.31.0",
     "flask-caching==2.3.1",
+    "networkx==3.3",  # Добавлено
 ]

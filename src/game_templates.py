@@ -417,7 +417,7 @@ Your response:
 # Constants for confirmation vote templates
 CONFIRMATION_VOTE_TEMPLATES = {
     "English": """
-You are {model_name}, playing a Mafia game. The town has voted to eliminate {player_to_eliminate}.
+You are {model_name}, playing a Mafia game as a {role_string}. The town has voted to eliminate {player_to_eliminate}.
 Before the elimination is carried out, a confirmation vote is needed.
 
 {confirmation_explanation}
