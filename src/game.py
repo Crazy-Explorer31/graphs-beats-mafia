@@ -17,7 +17,7 @@ from openrouter import get_llm_response
 class MafiaGame:
     """Represents a Mafia game with LLM players."""
 
-    def __init__(self, models=None, language=None, game_index=None, use_gnn_model=None):
+    def __init__(self, models=None, language=None, game_index=None, use_gnn_model=None, logging_enable=None):
         """
         Initialize a Mafia game.
 
@@ -58,7 +58,8 @@ class MafiaGame:
 
         # Initialize logger
         self.logger = GameLogger()
-        self.logger_hidden = GameLogger(filename="answers_hidden", hidden=True)
+        if logging_enable:
+            self.logger_hidden = GameLogger(filename="answers_hidden", hidden=True)
 
         self.game_index=game_index
 
@@ -67,6 +68,7 @@ class MafiaGame:
         if use_gnn_model:
             self.gnn_model = torch.load("models/civilian_gnn.pth")
         self.roles = None
+        self.logging_enable = logging_enable
 
     def setup_game(self):
         """
@@ -149,9 +151,10 @@ class MafiaGame:
             # self.logger_hidden.player_setup( # NOTICE: can be activated
             #     player.model_name, player.role.value, player.player_name
             # )
-        self.logger_hidden.setup_hidden(
-            [f"{player.model_name}_{player.player_name}_{player.role}".replace("Role.", "") for player in self.players]
-        )
+        if self.logging_enable:
+            self.logger_hidden.setup_hidden(
+                [f"{player.model_name}_{player.player_name}_{player.role}".replace("Role.", "") for player in self.players]
+            )
 
         # Set phase to night
         self.phase = "night"
@@ -302,9 +305,10 @@ class MafiaGame:
 
                 # Get response
                 response = player.get_response(prompt)
-                self.logger.player_response(
-                    player.model_name, "Mafia", response, player.player_name
-                )
+                if self.logging_enable:
+                    self.logger.player_response(
+                        player.model_name, "Mafia", response, player.player_name
+                    )
 
                 # Add to messages with night phase marker
                 self.current_round_data["messages"].append(
@@ -390,12 +394,13 @@ class MafiaGame:
 
             # Get response
             response = self.doctor_player.get_response(prompt)
-            self.logger.player_response(
-                self.doctor_player.model_name,
-                "Doctor",
-                response,
-                self.doctor_player.player_name,
-            )
+            if self.logging_enable:
+                self.logger.player_response(
+                    self.doctor_player.model_name,
+                    "Doctor",
+                    response,
+                    self.doctor_player.player_name,
+                )
 
             # Add to messages with night phase marker
             self.current_round_data["messages"].append(
@@ -722,15 +727,17 @@ class MafiaGame:
 
             # Get hidden response
             response_hidden = player.get_response(prompt_hidden)
-            self.logger_hidden.player_response_hidden(
-                player.model_name, player.role.value, response_hidden, question, player_name=player.player_name
-            )
+            if self.logging_enable:
+                self.logger_hidden.player_response_hidden(
+                    player.model_name, player.role.value, response_hidden, question, player_name=player.player_name
+                )
 
             # Get response
             response_to_remind = player.get_response(pre_prompt)
-            self.logger_hidden.player_response_hidden(
-                player.model_name, player.role.value, response_to_remind, question_to_remind, player_name=player.player_name
-            )
+            if self.logging_enable:
+                self.logger_hidden.player_response_hidden(
+                    player.model_name, player.role.value, response_to_remind, question_to_remind, player_name=player.player_name
+                )
 
             prompt = player.generate_prompt(
                 game_state,
@@ -741,9 +748,10 @@ class MafiaGame:
 
             # Get response
             response = player.get_response(prompt)
-            self.logger.player_response(
-                player.model_name, player.role.value, response, player.player_name
-            )
+            if self.logging_enable:
+                self.logger.player_response(
+                    player.model_name, player.role.value, response, player.player_name
+                )
 
             # Add to messages
             messages.append(
@@ -818,12 +826,13 @@ class MafiaGame:
 
         # Get response
         response = player.get_response(prompt)
-        self.logger.player_response(
-            player.model_name,
-            f"{player.role.value} (Last Words)",
-            response,
-            player.player_name,
-        )
+        if self.logging_enable:
+            self.logger.player_response(
+                player.model_name,
+                f"{player.role.value} (Last Words)",
+                response,
+                player.player_name,
+            )
 
         return response
 
@@ -903,8 +912,8 @@ class MafiaGame:
                 try:
                     player.update_graph(all_players, current_round)
                     print(f"[Graph] Updated graph for {player.player_name}")
-
-                    player.dump_state()
+                    if self.logging_enable:
+                        player.dump_state()
                 except Exception as e:
                     print(f"[Graph] Failed to update graph for {player.player_name}: {e}")
     

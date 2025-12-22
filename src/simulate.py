@@ -12,7 +12,7 @@ from game import MafiaGame
 from logger import GameLogger, Color
 
 
-def run_single_game(game_number, language=None, models=None, game_index=0, use_gnn_model=None):
+def run_single_game(game_number, language=None, models=None, game_index=0, use_gnn_model=None, logging_enable=None):
     """
     Run a single Mafia game.
 
@@ -24,7 +24,7 @@ def run_single_game(game_number, language=None, models=None, game_index=0, use_g
     Returns:
         tuple: (game_number, winner, rounds_data, participants, game_id, language, critic_review)
     """
-    game = MafiaGame(models=models, language=language, game_index=game_index, use_gnn_model=use_gnn_model)
+    game = MafiaGame(models=models, language=language, game_index=game_index, use_gnn_model=use_gnn_model, logging_enable=logging_enable)
     winner, rounds_data, participants, language, critic_review = game.run_game()
     return (
         game_number,
@@ -38,7 +38,7 @@ def run_single_game(game_number, language=None, models=None, game_index=0, use_g
 
 
 def run_simulation(
-    num_games=config.NUM_GAMES, parallel=False, max_workers=4, language=None, models=None, use_gnn_model=None
+    num_games=config.NUM_GAMES, parallel=False, max_workers=4, language=None, models=None, use_gnn_model=None, logging_enable=None
 ):
     """
     Run multiple Mafia games and store results.
@@ -166,7 +166,7 @@ def run_simulation(
                     game_id,
                     language,
                     critic_review,
-                ) = run_single_game(i, game_language, models, game_index=i, use_gnn_model=use_gnn_model)
+                ) = run_single_game(i, game_language, models, game_index=i, use_gnn_model=use_gnn_model, logging_enable=logging_enable)
 
                 # Update statistics
                 stats["completed_games"] += 1
@@ -262,6 +262,11 @@ if __name__ == "__main__":
         default=4,
         help="Maximum number of worker threads for parallel execution (default: 4)"
     )
+    parser.add_argument(
+        "--logging-enable",
+        action="store_true",
+        help="Enable logging responses during the simulation"
+    )
     
     args = parser.parse_args()
     
@@ -297,5 +302,6 @@ if __name__ == "__main__":
         parallel=args.parallel,
         max_workers=args.max_workers,
         models=models,
-        use_gnn_model=False
+        use_gnn_model=False,
+        logging_enable=True if args.logging_enable else False
     )
