@@ -2,6 +2,7 @@
 Game logic for the LLM Mafia Game Competition.
 """
 
+import torch
 import random
 import uuid
 from player import Player
@@ -62,7 +63,9 @@ class MafiaGame:
         self.game_index=game_index
 
         self.use_gnn_model = use_gnn_model
-        self.gnn_model = None # TODO: load model if use_gnn_model == True
+        self.gnn_model = None
+        if use_gnn_model:
+            self.gnn_model = torch.load("models/civilian_gnn.pth")
         self.roles = None
 
     def setup_game(self):

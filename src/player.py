@@ -8,6 +8,7 @@ import re
 import config
 import json
 from openrouter import get_llm_response
+from gnn_model_tools import predict_game_roles
 from game_templates import (
     Role,
     GAME_RULES,
@@ -766,14 +767,21 @@ class Player:
                 recent_discussion = recent_discussion[newline_pos + 1:]
             recent_discussion = f"[...truncated...]\n{recent_discussion}"
 
-        # Get graph representation
-        graph_prompt = self.graph_to_prompt(all_players)
-
-        # Combine graph + recent discussion
-        context = f"""{graph_prompt}
-
-    === RECENT DISCUSSION ===
-    {recent_discussion}"""
+        # Combine recent discussion + special_context
+        if self.game.gnn_model is not None:
+            if self.role == Role.VILLAGER or self.role == Role.VILLAGER:
+                special_context = predict_game_roles(self.game.gnn_model, self.graph)
+            else: # self.role == Role.MAFIA
+                special_context = full_discussion_history
+        else:
+            special_context = self.graph_to_prompt(all_players)
+        
+        context = f"""
+        === RECENT DISCUSSION ===
+        {recent_discussion}
+        === PLAYER'S STATE GRAPH ===
+        {special_context}
+        """
 
         return context
 
