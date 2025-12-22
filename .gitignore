@@ -55,3 +55,4 @@ scripts/remote-config.sh
 
 .cursor
 logs/
+train_data/*

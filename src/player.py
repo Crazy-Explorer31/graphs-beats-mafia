@@ -6,6 +6,7 @@ import numpy as np
 import random
 import re
 import config
+import json
 from openrouter import get_llm_response
 from game_templates import (
     Role,
@@ -121,7 +122,8 @@ class Player:
                 role_probabilities=role_probs,
                 alive=True,
                 is_self=(player.player_name == self.player_name),
-                actual_role=player.role.value if player.player_name == self.player_name else None
+                actual_role=player.role.value if player.player_name == self.player_name else None,
+                round_index=0
             )
 
             # Self-loop for self-trust
@@ -296,6 +298,7 @@ class Player:
         for player in all_players:
             if player.player_name in self.graph.nodes:
                 self.graph.nodes[player.player_name]['alive'] = player.alive
+                self.graph.nodes[player.player_name]['round_inedx'] = current_round
 
         alive_players = [p for p in all_players if p.alive]
 
@@ -308,7 +311,7 @@ class Player:
 
         # Get LLM response
         try:
-            response = get_llm_response(self.model_name, prompt)
+            response = get_llm_response(self.model_name, prompt) # response --- новый граф в виде json
             self._apply_graph_updates(response, alive_players, current_round)
         except Exception as e:
             print(f"[{self.player_name}] Graph update failed: {e}")
@@ -517,7 +520,15 @@ class Player:
 
                 except (ValueError, TypeError, KeyError):
                     continue
-    
+
+    def dump_state(self):
+        if self.role != Role.MAFIA:
+            path = f"train_data/game_{self.game.game_index}_round_{self.game.round_number}_player_{self.player_name}_state_graph.json"
+            with open(path, 'w') as json_file:
+                json.dump(nx.node_link_data(self.graph), json_file, indent=4)
+            with open(f"train_data/game_{self.game.game_index}_round_{self.game.round_number}_player_{self.player_name}_roles.json", "w", encoding="utf-8") as f:
+                json.dump(self.game.roles, f, ensure_ascii=False, indent=4)
+
     def discussion_history_without_thinkings(self):
         return self.game.discussion_history_without_thinkings()
     
@@ -776,7 +787,7 @@ class Player:
         Returns:
             str: The response from the model with private thoughts removed.
         """
-        print(f"\n\n{len(prompt)=} {prompt=}\n\n")
+        # print(f"\n\n{len(prompt)=} {prompt=}\n\n")
         response = get_llm_response(self.model_name, prompt)
 
         # Remove any <think></think> tags and their contents before sharing with other players

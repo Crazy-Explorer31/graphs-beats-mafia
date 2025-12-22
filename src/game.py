@@ -16,7 +16,7 @@ from openrouter import get_llm_response
 class MafiaGame:
     """Represents a Mafia game with LLM players."""
 
-    def __init__(self, models=None, language=None):
+    def __init__(self, models=None, language=None, game_index=None, use_gnn_model=None):
         """
         Initialize a Mafia game.
 
@@ -58,6 +58,12 @@ class MafiaGame:
         # Initialize logger
         self.logger = GameLogger()
         self.logger_hidden = GameLogger(filename="answers_hidden", hidden=True)
+
+        self.game_index=game_index
+
+        self.use_gnn_model = use_gnn_model
+        self.gnn_model = None # TODO: load model if use_gnn_model == True
+        self.roles = None
 
     def setup_game(self):
         """
@@ -157,6 +163,8 @@ class MafiaGame:
             "protected_by_doctor": [],  # Reset for the new round
             "outcome": "",
         }
+
+        self.roles = {player_.player_name : str(player_.role.value) for player_ in self.players}
 
         return True
 
@@ -426,24 +434,27 @@ class MafiaGame:
 
         # Process night actions
         eliminated_players = []
-        if kill_target and not kill_target.protected:
-            kill_target.alive = False
-            eliminated_players.append(kill_target)
-            self.current_round_data["eliminations"].append(kill_target.model_name)
-            # We already added to targeted_by_mafia above
-            # Not adding to eliminated_by_vote since this is a night kill
-            outcome_text = f"{kill_target.player_name} [{kill_target.model_name}] was killed by the Mafia."
-            self.current_round_data["outcome"] = outcome_text
-            self.logger.event(outcome_text, Color.RED)
-        else:
-            if kill_target and kill_target.protected:
-                outcome_text = f"The Doctor protected {kill_target.player_name} [{kill_target.model_name}] from the Mafia."
+        while len(eliminated_players) == 0:
+            if kill_target and not kill_target.protected:
+                kill_target.alive = False
+                eliminated_players.append(kill_target)
+                self.current_round_data["eliminations"].append(kill_target.model_name)
+                # We already added to targeted_by_mafia above
+                # Not adding to eliminated_by_vote since this is a night kill
+                outcome_text = f"{kill_target.player_name} [{kill_target.model_name}] was killed by the Mafia."
                 self.current_round_data["outcome"] = outcome_text
-                self.logger.event(outcome_text, Color.BLUE)
+                self.logger.event(outcome_text, Color.RED)
             else:
-                outcome_text = "No one was killed during the night."
-                self.current_round_data["outcome"] = outcome_text
-                self.logger.event(outcome_text, Color.YELLOW)
+                if kill_target and kill_target.protected:
+                    outcome_text = f"The Doctor protected {kill_target.player_name} [{kill_target.model_name}] from the Mafia."
+                    self.current_round_data["outcome"] = outcome_text
+                    self.logger.event(outcome_text, Color.BLUE)
+                    break
+                else:
+                    kill_target = random.choice([
+                        player_ for player_ in self.get_alive_players() if not player_.protected
+                    ])
+
 
         # Set phase to day
         self.phase = "day"
@@ -889,9 +900,11 @@ class MafiaGame:
                 try:
                     player.update_graph(all_players, current_round)
                     print(f"[Graph] Updated graph for {player.player_name}")
+
+                    player.dump_state()
                 except Exception as e:
                     print(f"[Graph] Failed to update graph for {player.player_name}: {e}")
-
+    
     def run_game(self):
         """
         Run the Mafia game until completion.

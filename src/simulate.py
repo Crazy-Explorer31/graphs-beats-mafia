@@ -12,7 +12,7 @@ from game import MafiaGame
 from logger import GameLogger, Color
 
 
-def run_single_game(game_number, language=None, models=None):
+def run_single_game(game_number, language=None, models=None, game_index=0, use_gnn_model=None):
     """
     Run a single Mafia game.
 
@@ -24,7 +24,7 @@ def run_single_game(game_number, language=None, models=None):
     Returns:
         tuple: (game_number, winner, rounds_data, participants, game_id, language, critic_review)
     """
-    game = MafiaGame(models=models, language=language)
+    game = MafiaGame(models=models, language=language, game_index=game_index, use_gnn_model=use_gnn_model)
     winner, rounds_data, participants, language, critic_review = game.run_game()
     return (
         game_number,
@@ -38,7 +38,7 @@ def run_single_game(game_number, language=None, models=None):
 
 
 def run_simulation(
-    num_games=config.NUM_GAMES, parallel=False, max_workers=4, language=None, models=None
+    num_games=config.NUM_GAMES, parallel=False, max_workers=4, language=None, models=None, use_gnn_model=None
 ):
     """
     Run multiple Mafia games and store results.
@@ -166,7 +166,7 @@ def run_simulation(
                     game_id,
                     language,
                     critic_review,
-                ) = run_single_game(i, game_language, models)
+                ) = run_single_game(i, game_language, models, game_index=i, use_gnn_model=use_gnn_model)
 
                 # Update statistics
                 stats["completed_games"] += 1
@@ -225,6 +225,9 @@ def run_simulation(
 
     # Log statistics using our logger
     logger.stats(stats)
+
+    logger.header("VILLAGER WINRATE", Color.BRIGHT_CYAN)
+    print(stats["villager_wins"] / num_games)
 
     return stats
 
@@ -293,5 +296,6 @@ if __name__ == "__main__":
         num_games=args.num_games,
         parallel=args.parallel,
         max_workers=args.max_workers,
-        models=models
+        models=models,
+        use_gnn_model=False
     )

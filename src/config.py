@@ -26,13 +26,8 @@ OLLAMA_MODELS = [
     "qwen3:0.6b",
 ]
 '''
-OLLAMA_MODELS = ["qwen2.5:0.5b"] * 6
 # OLLAMA_MODELS = ["qwen2.5:7b"] * 6
 # Firebase settings
-FIREBASE_CREDENTIALS_PATH = (
-    "firebase_credentials.json"  # Path to your Firebase credentials file
-)
-
 # Game settings
 
 CLAUDE_SONNET_4 = "anthropic/claude-sonnet-4"
@@ -89,9 +84,9 @@ FREE_MODELS = [
 # Game configuration
 NUM_GAMES = int(os.getenv("NUM_GAMES", 1))  # Number of games to simulate
 PLAYERS_PER_GAME = int(
-    os.getenv("PLAYERS_PER_GAME", 6)
+    os.getenv("PLAYERS_PER_GAME", 7)
 )  # Number of players in each game
-MAFIA_COUNT = int(os.getenv("MAFIA_COUNT", 2))  # Number of Mafia players
+MAFIA_COUNT = int(os.getenv("MAFIA_COUNT", 1))  # Number of Mafia players
 DOCTOR_COUNT = int(os.getenv("DOCTOR_COUNT", 1))  # Number of Doctor players
 # Villagers will be: PLAYERS_PER_GAME - MAFIA_COUNT - DOCTOR_COUNT
 
@@ -137,3 +132,5 @@ if RANDOM_SEED is not None:
     RANDOM_SEED = int(RANDOM_SEED)
 
 UNIQUE_MODELS = os.getenv("UNIQUE_MODELS", "true") == "true"
+
+OLLAMA_MODELS = ["qwen2.5:0.5b"] * PLAYERS_PER_GAME
