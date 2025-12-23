@@ -14,4 +14,7 @@ dependencies = [
     "requests==2.31.0",
     "flask-caching==2.3.1",
     "networkx==3.3",  # Добавлено
+    "tqdm",
+    "torch",
+    "torch_geometric"
 ]
