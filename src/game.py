@@ -12,7 +12,7 @@ from logger import GameLogger, Color
 import re
 import json
 from openrouter import get_llm_response
-
+from gnn_model_tools import *
 
 class MafiaGame:
     """Represents a Mafia game with LLM players."""
@@ -66,7 +66,7 @@ class MafiaGame:
         self.use_gnn_model = use_gnn_model
         self.gnn_model = None
         if use_gnn_model:
-            self.gnn_model = torch.load("models/civilian_gnn.pth")
+            self.gnn_model = torch.load("models/civilian_gnn.pth", weights_only=False)
         self.roles = None
         self.logging_enable = logging_enable
 

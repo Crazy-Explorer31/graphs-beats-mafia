@@ -10,7 +10,7 @@ import argparse
 import config
 from game import MafiaGame
 from logger import GameLogger, Color
-
+from gnn_model_tools import *
 
 def run_single_game(game_number, language=None, models=None, game_index=0, use_gnn_model=None, logging_enable=None):
     """
