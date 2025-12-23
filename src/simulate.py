@@ -303,5 +303,5 @@ if __name__ == "__main__":
         max_workers=args.max_workers,
         models=models,
         use_gnn_model=False,
-        logging_enable=True if args.logging_enable else False
+        logging_enable=False
     )

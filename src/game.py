@@ -129,8 +129,6 @@ class MafiaGame:
                 player_name = random.choice(available_names)
 
             use_graph = False
-            if roles[i] == Role.VILLAGER or roles[i] == Role.DOCTOR:
-                use_graph = True
             # Create player with both model_name and player_name
             player = Player(model_name, player_name, roles[i], language=self.language, game=self, use_graph=use_graph)
             self.players.append(player)
