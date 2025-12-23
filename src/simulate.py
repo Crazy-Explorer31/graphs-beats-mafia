@@ -302,6 +302,6 @@ if __name__ == "__main__":
         parallel=args.parallel,
         max_workers=args.max_workers,
         models=models,
-        use_gnn_model=False,
-        logging_enable=True if args.logging_enable else False
+        use_gnn_model=True,
+        logging_enable=False
     )
