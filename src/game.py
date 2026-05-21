@@ -736,6 +736,22 @@ class MafiaGame:
                         player.player_name
                     ] = "Invalid vote"
 
+            # Generate a per-phrase relationship graph for this player's message
+            # and append it to their graph_sequence. This is done after response
+            # parsing but before appending to the discussion history.
+            try:
+                player.generate_per_phrase_graph(
+                    message=response,
+                    alive_players=alive_players,
+                    current_round=self.round_number,
+                    phase=phase_type,
+                )
+            except Exception as e:
+                self.logger.warning(
+                    f"[PhraseGraph] Failed to generate per-phrase graph for "
+                    f"{player.player_name}: {e}"
+                )
+
             # Update discussion history using player_name as the speaker
             self.discussion_history += f"{player.player_name}: {response}\n\n"
             self.discussion_history_last_round += f"{player.player_name}: {response}\n\n"
