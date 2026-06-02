@@ -12,6 +12,7 @@ import re
 import json
 from openrouter import get_llm_response
 from game_state import GameStateManager, DiscussionHistory
+from game_orchestrator import GameOrchestrator
 
 
 class MafiaGame:
@@ -56,6 +57,9 @@ class MafiaGame:
 
         # Initialize logger
         self.logger = GameLogger()
+
+        # Initialize orchestrator (must be last after state and logger)
+        self.orchestrator = GameOrchestrator(self)
 
     def setup_game(self):
         """
@@ -780,192 +784,23 @@ class MafiaGame:
 
         return is_confirmed, confirmation_votes
 
+    # ---- Orchestration delegation ----
+
     def init_all_graphs(self):
-        """Initialize graphs for all players at game start."""
-        for player in self.players:
-            if player.use_graph:
-                player.init_graph(self.players)
-                print(f"[Graph] Initialized graph for {player.player_name}")
+        """Initialize graphs for all players, delegated to GameOrchestrator."""
+        self.orchestrator.init_all_graphs()
 
     def update_all_graphs(self, current_round):
-        """
-        Update graphs for all players who use graph-based reasoning.
-        Should be called at the end of each round.
-
-        Args:
-            current_round (int): Current round number.
-        """
-        all_players = self.players
-        for player in self.get_alive_players():
-            if player.alive and player.use_graph:
-                try:
-                    player.update_graph(all_players, current_round)
-                    print(f"[Graph] Updated graph for {player.player_name}")
-                except Exception as e:
-                    print(f"[Graph] Failed to update graph for {player.player_name}: {e}")
+        """Update graphs for all players, delegated to GameOrchestrator."""
+        self.orchestrator.update_all_graphs(current_round)
 
     def run_game(self):
-        """
-        Run the Mafia game until completion.
-
-        Returns:
-            tuple: (winner, rounds_data, participants, language, critic_review)
-                   winner is "Mafia" or "Villagers".
-                   rounds_data includes all messages (day and night phases).
-                   participants is keyed by player_name.
-                   language is the language used for the game.
-        """
-        # Setup game
-        if not self.setup_game():
-            return None, [], {}, self.language
-
-        # Game loop
-        game_over = False
-        winner = None
-
-        while not game_over:
-            # Check if game is over after night phase
-            game_over, winner = self.check_game_over()
-            if game_over:
-                break
-
-            print(f'round_number={self.round_number}')
-            if self.round_number == 1:
-                self.init_all_graphs()
-
-            # Execute day phase
-            self.execute_day_phase()
-
-            # Check if game is over
-            game_over, winner = self.check_game_over()
-            if game_over:
-                break
-
-            # Execute night phase
-            self.execute_night_phase()
-
-            self.update_all_graphs(self.round_number)
-
-        # Add final round data if not already added
-        if self.current_round_data["round_number"] > 0:
-            self.state.add_round_data(self.current_round_data)
-
-        # Create participants dictionary keyed by player_name
-        participants = {}
-        for player in self.players:
-            participants[player.player_name] = {
-                "role": player.role.value,
-                "model_name": player.model_name,
-                "player_name": player.player_name,
-            }
-
-        # Generate game critic review
-        critic_review = self.generate_critic_review(winner)
-
-        # Log game end
-        self.logger.game_end(1, winner, self.round_number)
-
-        return winner, self.rounds_data, participants, self.language, critic_review
+        """Run the Mafia game until completion, delegated to GameOrchestrator."""
+        return self.orchestrator.run_game()
 
     def generate_critic_review(self, winner):
-        """
-        Generate a game critic review using Claude via OpenRouter.
-
-        Args:
-            winner (str): The winning team ("Mafia" or "Villagers").
-
-        Returns:
-            dict: A dictionary containing the critic review with title, content, and one-sentence summary.
-        """
-        # Get the game summary information using player_name for identification
-        game_summary = {
-            "winner": winner,
-            "rounds": self.round_number,
-            "participants": {
-                player.player_name: player.role.value for player in self.players
-            },
-            "eliminations": [],
-        }
-
-        # Collect eliminations by round (eliminations are already stored by player_name)
-        for round_data in self.rounds_data:
-            if "eliminations" in round_data and round_data["eliminations"]:
-                for player_name in round_data["eliminations"]:
-                    game_summary["eliminations"].append(
-                        {
-                            "player": player_name,
-                            "round": round_data["round_number"],
-                            "phase": round_data.get("phase", "unknown"),
-                        }
-                    )
-
-        # Create a prompt for Claude to generate a critic review
-        prompt = f"""You are a professional game critic reviewing a Mafia game played by AI language models. 
-        
-Game summary:
-- Winner: {winner}
-- Number of rounds: {self.round_number}
-- Players and roles: {game_summary['participants']}
-- Eliminations: {game_summary['eliminations']}
-
-Write a short, entertaining critic review of this game. Include:
-1. A catchy title for your review (max 50 characters)
-2. A concise review (max 200 words) that analyzes:
-   - The game's pacing and length
-   - Interesting strategic moves or blunders
-   - The performance of the winning team
-   - Any particularly noteworthy moments
-3. A one-sentence intense summary that captures the essence of the game in a dramatic way (max 100 characters)
-
-Your tone should be professional but entertaining, like a game critic. Be specific about this particular game.
-Format your response as a JSON object with 'title', 'content', and 'one_liner' fields.
-"""
-
-        try:
-            model_name = config.CLAUDE_SONNET_4
-            response_content = get_llm_response(model_name, prompt)
-
-            if response_content == "ERROR: Could not get response":
-                return {
-                    "title": "Game Review Unavailable",
-                    "content": "The critic was unable to review this game due to API issues.",
-                    "one_liner": "Technical difficulties prevented our critic from witnessing this showdown.",
-                }
-
-            # Look for JSON in the response
-            json_match = re.search(r"({.*})", response_content, re.DOTALL)
-
-            if json_match:
-                try:
-                    review_json = json.loads(json_match.group(1))
-                    # Ensure one_liner exists
-                    if "one_liner" not in review_json:
-                        review_json["one_liner"] = (
-                            "A game that defies simple description!"
-                        )
-                    return review_json
-                except json.JSONDecodeError:
-                    # Fallback if JSON parsing fails
-                    return {
-                        "title": "AI Mafia Game Review",
-                        "content": response_content[:300],
-                        "one_liner": "A game that left our critic speechless!",
-                    }
-            else:
-                # If no JSON found, create a simple structure
-                return {
-                    "title": "AI Mafia Game Review",
-                    "content": response_content[:300],
-                    "one_liner": "A game that defies conventional criticism!",
-                }
-
-        except Exception as e:
-            print(f"Error generating critic review: {e}")
-            return {
-                "title": "Game Review Unavailable",
-                "content": "The critic was unable to review this game due to technical difficulties.",
-                "one_liner": "Technical issues prevented our critic from delivering judgment.",
-            }
+        """Generate a game critic review, delegated to GameOrchestrator."""
+        return self.orchestrator.generate_critic_review(winner)
 
 
 player_names = [
