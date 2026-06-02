@@ -11,6 +11,7 @@ from logger import GameLogger, Color
 import re
 import json
 from openrouter import get_llm_response
+from game_state import GameStateManager, DiscussionHistory
 
 
 class MafiaGame:
@@ -26,25 +27,23 @@ class MafiaGame:
         """
         self.game_id = str(uuid.uuid4())
         self.round_number = 0
-        self.phase = "setup"  # setup, night, day
-        self.players: list[Player] = []
-        self.mafia_players: list[Player] = []
-        self.doctor_player: Player | None = None
-        self.villager_players: list[Player] = []
+        self.phase = "setup"
+
+        # state manager
+        self.language = language if language is not None else config.LANGUAGE
+        self.state = GameStateManager(self.language)
+        self.disc = DiscussionHistory()
+
+        # expose shared lists/dicts from state for seamless migration
+        self.players = self.state.players
+        self.mafia_players = self.state.mafia_players
+        self.doctor_player = self.state.doctor_player   # will be set later
+        self.villager_players = self.state.villager_players
+        self.rounds_data = self.state.rounds_data
+        self.current_round_data = self.state.current_round_data
+
         self.discussion_history = ""
         self.discussion_history_last_round = ""
-        self.rounds_data = []
-        self.language = language if language is not None else config.LANGUAGE
-        self.current_round_data = {
-            "round_number": 0,
-            "messages": [],
-            "actions": {},
-            "eliminations": [],
-            "eliminated_by_vote": [],  # Reset for the new round
-            "targeted_by_mafia": [],   # Reset for the new round
-            "protected_by_doctor": [], # Reset for the new round
-            "outcome": "",
-        }
 
         self.unique_models = config.UNIQUE_MODELS
 
@@ -150,110 +149,44 @@ class MafiaGame:
             "outcome": "",
         }
 
+        # Sync state after setup
+        self.state.players = self.players
+        self.state.mafia_players = self.mafia_players
+        self.state.doctor_player = self.doctor_player
+        self.state.villager_players = self.villager_players
+        self.state.round_number = self.round_number
+        self.state.phase = self.phase
+        self.state.current_round_data = self.current_round_data
+
         return True
 
+    # ---- State delegation methods ----
+
     def get_game_state(self):
-        """
-        Get the current state of the game as a string.
-
-        Returns:
-            str: The current game state.
-        """
-        alive_count = sum(1 for p in self.players if p.alive)
-        mafia_count = sum(1 for p in self.mafia_players if p.alive)
-        villager_count = sum(1 for p in self.villager_players if p.alive)
-        doctor_count = 1 if self.doctor_player and self.doctor_player.alive else 0
-
-        state = f"Round {self.round_number}, {self.phase.capitalize()} phase. "
-        state += f"{alive_count} players alive ({mafia_count} Mafia, {villager_count + doctor_count} Villagers/Doctor). "
-
-        if self.round_number > 1:
-            state += f"In the previous round, {', '.join(self.current_round_data['eliminations'])} {'was' if len(self.current_round_data['eliminations']) == 1 else 'were'} eliminated. "
-
-        return state
+        """Return formatted game state, delegating to GameStateManager."""
+        self.state.round_number = self.round_number
+        self.state.phase = self.phase
+        self.state.current_round_data = self.current_round_data
+        return self.state.get_game_state()
 
     def get_alive_players(self):
-        """
-        Get a list of alive players.
-
-        Returns:
-            list: List of alive players.
-        """
-        return [p for p in self.players if p.alive]
+        """Return list of alive players, delegating to GameStateManager."""
+        return self.state.get_alive_players()
 
     def check_game_over(self):
-        """
-        Check if the game is over.
-
-        Returns:
-            tuple: (is_game_over, winner) where winner is "Mafia" or "Villagers" or None.
-        """
-        # Count alive players by role
-        mafia_alive = sum(1 for p in self.mafia_players if p.alive)
-        villagers_alive = sum(1 for p in self.villager_players if p.alive)
-        doctor_alive = 1 if self.doctor_player and self.doctor_player.alive else 0
-
-        # Check win conditions
-        if mafia_alive == 0:
-            return True, "Villagers"
-        elif mafia_alive >= (villagers_alive + doctor_alive):
-            return True, "Mafia"
-        elif self.round_number >= config.MAX_ROUNDS:
-            # Draw, but we'll count it as a villager win if there are more villagers than mafia
-            if villagers_alive + doctor_alive > mafia_alive:
-                return True, "Villagers"
-            else:
-                return True, "Mafia"
-
-        return False, None
+        """Check if game is over, delegating to GameStateManager."""
+        self.state.round_number = self.round_number
+        return self.state.check_game_over()
 
     def discussion_history_without_thinking(self):
-        """
-        Get the discussion history for the current round, excluding thinking messages.
-        Removes any <think></think> or <THINK></THINK> tags and their contents.
-        If a closing tag is missing, removes everything from the opening tag to the end of the string.
-        """
-        # First handle properly closed tags (both lowercase and uppercase)
-        discussion_history_without_thinking = re.sub(
-            r"<[tT][hH][iI][nN][kK]>.*?</[tT][hH][iI][nN][kK]>",
-            "",
-            self.discussion_history,
-            flags=re.DOTALL,
-        )
-
-        # Then handle any unclosed tags - remove from opening tag to the end of the string
-        discussion_history_without_thinking = re.sub(
-            r"<[tT][hH][iI][nN][kK]>.*$",
-            "",
-            discussion_history_without_thinking,
-            flags=re.DOTALL,
-        )
-
-        return discussion_history_without_thinking
+        """Return discussion history without think tags, delegated to DiscussionHistory."""
+        return self.disc.without_thinking(self.discussion_history)
 
     def discussion_history_last_round_without_thinking(self):
-        """
-        Get the discussion history for the last round, excluding thinking messages.
-        Removes any  or <THINK></THINK> tags and their contents.
-        If a closing tag is missing, removes everything from the opening tag to the end of the string.
-        """
-        # First handle properly closed tags (both lowercase and uppercase)
-        discussion_history_without_thinking = re.sub(
-            r"<[tT][hH][iI][nN][kK]>.*?</[tT][hH][iI][nN][kK]>",
-            "",
-            self.discussion_history_last_round,
-            flags=re.DOTALL,
-        )
+        """Return last round history without think tags, delegated to DiscussionHistory."""
+        return self.disc.without_thinking(self.discussion_history_last_round)
 
-        # Then handle any unclosed tags - remove from opening tag to the end of the string
-        discussion_history_without_thinking = re.sub(
-            r"<[tT][hH][iI][nN][kK]>.*$",
-            "",
-            discussion_history_without_thinking,
-            flags=re.DOTALL,
-        )
-
-        return discussion_history_without_thinking
+    # ---- Phase execution ----
 
     def execute_night_phase(self):
         """
@@ -601,7 +534,7 @@ class MafiaGame:
 
         # Set phase to night and increment round
         self.phase = "night"
-        self.rounds_data.append(self.current_round_data)
+        self.state.add_round_data(self.current_round_data)
         self.round_number += 1
         self.current_round_data = {
             "round_number": self.round_number,
@@ -915,7 +848,7 @@ class MafiaGame:
 
         # Add final round data if not already added
         if self.current_round_data["round_number"] > 0:
-            self.rounds_data.append(self.current_round_data)
+            self.state.add_round_data(self.current_round_data)
 
         # Create participants dictionary keyed by player_name
         participants = {}
