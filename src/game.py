@@ -124,8 +124,6 @@ class MafiaGame:
             # if roles[i] == Role.VILLAGER or roles[i] == Role.DOCTOR:
             use_graph = True
             use_phrase_graph = False
-            if i == 0:
-                use_phrase_graph = True
 
             # Create player with both model_name (hidden) and player_name (visible)
             player = Player(model_name, player_name, roles[i], language=self.language, game=self, use_graph=use_graph, use_phrase_graph=use_phrase_graph)

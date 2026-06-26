@@ -1,6 +1,6 @@
 """
 Unified LLM API client for the LLM Mafia Game Competition.
-This module handles interactions with both OpenRouter and Ollama APIs.
+This module handles interactions with both RouterAI and Ollama APIs.
 """
 
 import json
@@ -91,7 +91,7 @@ def get_ollama_response(model_name, prompt):
 
 def get_openrouter_response(model_name, prompt):
     """
-    Get a response from an LLM model using OpenRouter API.
+    Get a response from an LLM model using RouterAI API.
 
     Args:
         model_name (str): The name of the LLM model to use.
@@ -103,11 +103,11 @@ def get_openrouter_response(model_name, prompt):
     # Get model-specific configuration if available
     model_config = config.MODEL_CONFIGS.get(model_name, {})
 
-    # Set timeout, max_retries, and backoff_factor based on model config or defaults
+    # Set timeout based on model config or defaults
     timeout = model_config.get("timeout", config.API_TIMEOUT)
 
     headers = {
-        "Authorization": f"Bearer {config.OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {config.ROUTERAI_API_KEY}",
         "Content-Type": "application/json",
     }
 
@@ -119,10 +119,10 @@ def get_openrouter_response(model_name, prompt):
 
     try:
         response = requests.post(
-            config.OPENROUTER_API_URL,
+            config.ROUTERAI_API_URL,
             headers=headers,
             data=json.dumps(data),
-            timeout=timeout,  # Use model-specific timeout
+            timeout=timeout,
         )
         response.raise_for_status()
 
@@ -141,14 +141,14 @@ def get_openrouter_response(model_name, prompt):
             pass
 
         print(
-            f"Error getting response from OpenRouter model {model_name}: error: {e}, response: {response_text}"
+            f"Error getting response from RouterAI model {model_name}: error: {e}, response: {response_text}"
         )
-        return "ERROR: Could not get response from OpenRouter"
+        return "ERROR: Could not get response from RouterAI"
 
 
 def get_llm_response(model_name, prompt):
     """
-    Get a response from an LLM model using the appropriate API (OpenRouter or Ollama).
+    Get a response from an LLM model using the appropriate API (RouterAI or Ollama).
 
     Args:
         model_name (str): The name of the LLM model to use.

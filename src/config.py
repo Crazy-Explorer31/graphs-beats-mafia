@@ -8,26 +8,33 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# OpenRouter API settings
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
-OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+# RouterAI API settings (replaces OpenRouter)
+ROUTERAI_API_KEY = os.getenv("ROUTERAI_API_KEY")
+if ROUTERAI_API_KEY is None:
+    raise ValueError("`ROUTERAI_API_KEY` environment variable is not set")
+
+ROUTERAI_API_URL = os.getenv(
+    "ROUTERAI_API_URL",
+    "https://routerai.ru/api/v1/chat/completions",
+)
+
+# OpenRouter API settings (deprecated, kept for reference)
+# OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+# OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # Ollama API settings
 OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
 
-'''
-OLLAMA_MODELS = [
-    "qwen:0.5b",
-    "qwen2.5:0.5b",
-    "qwen3:0.6b",
-    "qwen:0.5b",
-    "qwen2.5:0.5b",
-    "qwen3:0.6b",
-    "qwen3:0.6b",
-]
-'''
-OLLAMA_MODELS = ["qwen2.5:0.5b"] * 6
-# OLLAMA_MODELS = ["qwen2.5:7b"] * 6
+# ---- SWITCH TO ROUTERAI ONLY ----
+# Setting OLLAMA_MODELS to an empty list ensures that all player models
+# are handled by RouterAI (or any non‑Ollama API you configure).
+OLLAMA_MODELS = []  # formerly: ["llama3.2:3b"] * 6
+
+# ROUTERAI_MODELS works exactly like the old OLLAMA_MODELS list:
+# each element corresponds to the model that a particular player will use.
+# Here we assign all six players to deepseek/deepseek-v4-flash.
+ROUTERAI_MODELS = ["deepseek/deepseek-v4-flash"] * 6
+
 # Firebase settings
 FIREBASE_CREDENTIALS_PATH = (
     "firebase_credentials.json"  # Path to your Firebase credentials file
@@ -37,6 +44,8 @@ FIREBASE_CREDENTIALS_PATH = (
 
 CLAUDE_SONNET_4 = "anthropic/claude-sonnet-4"
 MODELS = [
+    # DeepSeek (via RouterAI)
+    "deepseek/deepseek-v4-flash",
     # Google
     "google/gemini-flash-1.5",
     "google/gemini-flash-1.5-8b",
@@ -114,6 +123,9 @@ MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", 400))
 
 # Model-specific configurations
 MODEL_CONFIGS = {
+    "deepseek/deepseek-v4-flash": {
+        "timeout": 60,      # tune if needed
+    },
     "deepseek/deepseek-r1": {
         "timeout": 90,  # Longer timeout for DeepSeek-R1
     },
@@ -136,4 +148,6 @@ RANDOM_SEED = os.getenv("RANDOM_SEED")
 if RANDOM_SEED is not None:
     RANDOM_SEED = int(RANDOM_SEED)
 
-UNIQUE_MODELS = os.getenv("UNIQUE_MODELS", "true") == "true"
+# For testing with a single RouterAI model, allow repeated use of the same model.
+# Set this to False so that multiple players can all use deepseek-v4-flash.
+UNIQUE_MODELS = False   # was: os.getenv("UNIQUE_MODELS", "true") == "true"
