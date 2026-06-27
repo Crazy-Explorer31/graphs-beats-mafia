@@ -327,6 +327,19 @@ class Player:
             discussion_history=discussion_history,
         )
 
+        # Ensure game configuration information appears in the prompt
+        if self.game:
+            total_mafia = sum(1 for p in self.game.players if p.role == Role.MAFIA)
+            total_doctor = sum(1 for p in self.game.players if p.role == Role.DOCTOR)
+            total_villager = sum(1 for p in self.game.players if p.role == Role.VILLAGER)
+            doctor_word = "Doctors" if total_doctor != 1 else "Doctor"
+            config_line = (
+                f"Game configuration: {total_villager} Villagers, "
+                f"{total_mafia} Mafia, and {total_doctor} {doctor_word}."
+            )
+            if config_line not in prompt:
+                prompt = config_line + "\n" + prompt
+
         # Prepend role information if not already present
         role_phrase = f"You are a {self.role.value}. "
         if not prompt.startswith(role_phrase):
