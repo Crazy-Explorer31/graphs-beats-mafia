@@ -3,6 +3,7 @@ Player class for the LLM Mafia Game Competition.
 """
 import re
 import config
+from typing import Optional
 from openrouter import get_llm_response
 from game_templates import (
     Role,
@@ -18,12 +19,13 @@ from game_templates import (
 from trust_graph import TrustGraph
 from prompt_builder import PromptBuilder
 from phrase_graph import PhraseGraph
+from big_five import BigFiveProfile
 
 
 class Player:
     """Represents an LLM player in the Mafia game."""
 
-    def __init__(self, model_name, player_name, role, language=None, use_graph=False, use_phrase_graph=False, game=None):
+    def __init__(self, model_name, player_name, role, language=None, use_graph=False, use_phrase_graph=False, use_big_five=False, game=None):
         """
         Initialize a player.
 
@@ -34,6 +36,7 @@ class Player:
             language (str, optional): The language for the player. Defaults to English.
             use_graph (bool, optional): Whether this player uses graph-based reasoning.
             use_phrase_graph (bool, optional): Whether this player uses per-phrase relationship graphs.
+            use_big_five (bool, optional): Whether this player performs Big Five assessments.
             game (MafiaGame, optional): Reference to the game instance.
         """
         self.model_name = model_name      # Hidden: only used for LLM API calls
@@ -42,6 +45,9 @@ class Player:
         self.alive = True
         self.use_graph = use_graph
         self.use_phrase_graph = use_phrase_graph  # per-phrase graph activation
+        self.use_big_five = use_big_five          # Big Five assessment activation
+        self.bigfive_profile: Optional[BigFiveProfile] = None
+        self.bigfive_assessments: list = []       # accumulated per-observer estimates
         self.trust_graph = None           # TrustGraph instance (replaces self.graph)
         self.protected = False            # Whether the player is protected by the doctor
         self.language = language if language else "English"

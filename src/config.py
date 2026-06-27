@@ -151,3 +151,23 @@ if RANDOM_SEED is not None:
 # For testing with a single RouterAI model, allow repeated use of the same model.
 # Set this to False so that multiple players can all use deepseek-v4-flash.
 UNIQUE_MODELS = False   # was: os.getenv("UNIQUE_MODELS", "true") == "true"
+
+# ----------------------------------------------------------------------
+# Big Five personality trait tracking (steps 1‑4)
+# ----------------------------------------------------------------------
+# Master switch – set to True to activate the entire Big Five pipeline
+BIGFIVE_ENABLED = False
+
+# Model used when an observer calls estimate_bigfive()
+BIGFIVE_MODEL = "deepseek/deepseek-v4-flash"
+
+# Which observers participate in Big Five assessments.
+#   True  → every alive player with use_big_five = True participates.
+#   dict  → mapping {model_name: bool} for fine‑grained control.
+USE_BIG_FIVE_FOR_MODEL = True
+
+# Path to the JSON file that persists player profiles and historical assessments across games.
+BIGFIVE_REGISTRY_FILE = os.getenv(
+    "BIGFIVE_REGISTRY_FILE",
+    "data/bigfive_registry.json",
+)
