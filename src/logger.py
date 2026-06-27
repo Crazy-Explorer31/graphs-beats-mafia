@@ -171,11 +171,11 @@ class GameLogger:
             player_display_name (str, optional): The display name of the player.
         """
         role_color = self.role_colors.get(role, Color.WHITE)
-        self.print(f"Player: {player_name}", Color.BRIGHT_WHITE, bold=True)
-        if player_display_name and player_display_name != player_name:
-            self.print(f"Name: {player_display_name}", Color.BRIGHT_CYAN, bold=True)
-        self.print(f"Role: {role}", role_color, bold=True)
-        self.print("-" * 40, Color.BRIGHT_BLACK)
+
+        # Build a single line that always shows the underlying model in brackets
+        display_label = player_display_name if player_display_name else player_name
+        line = f"{display_label} ({role}) [{player_name}]"
+        self.print(line, role_color, bold=True)
 
     def player_response(self, model_name, role, response, player_name=None):
         """
@@ -192,12 +192,10 @@ class GameLogger:
         # Format the response with indentation
         formatted_response = response.replace("\n", "\n    ")
 
-        # Display both model name and player name if provided
-        display_name = model_name
-        if player_name and player_name != model_name:
-            display_name = f"{player_name} [{model_name}]"
-
-        self.print(f"┌─ {display_name} ({role}) ", role_color, bold=True)
+        # Construct header containing both the display name and the underlying model
+        display_label = player_name if player_name else model_name
+        header = f"┌─ {display_label} ({role}) [{model_name}]"
+        self.print(header, role_color, bold=True)
         self.print(f"└─ {formatted_response}", Color.WHITE)
         self.print("")
 
@@ -214,12 +212,13 @@ class GameLogger:
         """
         role_color = self.role_colors.get(role, Color.WHITE)
 
-        # Display both model name and player name if provided
-        display_name = model_name
-        if player_name and player_name != model_name:
-            display_name = f"{player_name} [{model_name}]"
-
-        self.print(f"ACTION: {display_name} ({role}) - {action}", role_color, bold=True)
+        # Build a line that shows the display name and the underlying model
+        display_label = player_name if player_name else model_name
+        self.print(
+            f"ACTION: {display_label} ({role}) [{model_name}] - {action}",
+            role_color,
+            bold=True,
+        )
 
     def event(self, text, color=Color.YELLOW):
         """Log game event."""

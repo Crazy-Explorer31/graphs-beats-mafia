@@ -28,7 +28,7 @@ class NightExecutor:
             )
             response = player.get_response(prompt)
             self.game.logger.player_response(
-                player.player_name, "Mafia", response, player.player_name
+                player.model_name, "Mafia", response, player_name=player.player_name
             )
             self.game.current_round_data["messages"].append({
                 "speaker": player.player_name,
@@ -43,7 +43,7 @@ class NightExecutor:
                 action_text = f"Kill {target.player_name}"
                 self.game.current_round_data["actions"][player.player_name] = action_text
                 self.game.logger.player_action(
-                    player.player_name, "Mafia", action_text, player.player_name
+                    player.model_name, "Mafia", action_text, player_name=player.player_name
                 )
             else:
                 self.game.logger.error(f"Invalid action from {player.player_name} (Mafia)")
@@ -101,10 +101,10 @@ class NightExecutor:
             )
             response = self.game.doctor_player.get_response(prompt)
             self.game.logger.player_response(
-                self.game.doctor_player.player_name,
+                self.game.doctor_player.model_name,
                 "Doctor",
                 response,
-                self.game.doctor_player.player_name,
+                player_name=self.game.doctor_player.player_name,
             )
             self.game.current_round_data["messages"].append({
                 "speaker": self.game.doctor_player.player_name,
@@ -123,10 +123,10 @@ class NightExecutor:
                 self.game.current_round_data["actions"][self.game.doctor_player.player_name] = action_text
                 self.game.current_round_data["protected_by_doctor"].append(target.player_name)
                 self.game.logger.player_action(
-                    self.game.doctor_player.player_name,
+                    self.game.doctor_player.model_name,
                     "Doctor",
                     action_text,
-                    self.game.doctor_player.player_name,
+                    player_name=self.game.doctor_player.player_name,
                 )
             else:
                 self.game.logger.error(
@@ -321,7 +321,7 @@ class DayExecutor:
             )
             response = player.get_response(prompt)
             self.game.logger.player_response(
-                player.player_name, player.role.value, response, player.player_name
+                player.model_name, player.role.value, response, player_name=player.player_name
             )
             messages.append({
                 "speaker": player.player_name,
@@ -343,10 +343,10 @@ class DayExecutor:
                     action_text = f"Vote {vote_target.player_name}"
                     self.game.current_round_data["actions"][player.player_name] = action_text
                     self.game.logger.player_action(
-                        player.player_name,
+                        player.model_name,
                         player.role.value,
                         action_text,
-                        player.player_name,
+                        player_name=player.player_name,
                     )
                 else:
                     self.game.logger.warning(
@@ -382,7 +382,8 @@ class DayExecutor:
             Color.CYAN,
         )
         game_state = (
-            f"{self.game.get_game_state()} You have been voted out with {vote_count} votes "
+            f"{self.game.get_game_state()} You are a {player.role.value}. "
+            f"You have been voted out with {vote_count} votes "
             "and will be eliminated. Share your final thoughts before leaving the game."
         )
         prompt = player.generate_prompt(
@@ -393,10 +394,10 @@ class DayExecutor:
         )
         response = player.get_response(prompt)
         self.game.logger.player_response(
-            player.player_name,
+            player.model_name,
             f"{player.role.value} (Last Words)",
             response,
-            player.player_name,
+            player_name=player.player_name,
         )
         return response
 
