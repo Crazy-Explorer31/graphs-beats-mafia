@@ -119,12 +119,12 @@ MAX_ROUNDS = int(os.getenv("MAX_ROUNDS", 20))
 API_TIMEOUT = int(os.getenv("API_TIMEOUT", 60))
 
 # Maximum output tokens for LLM responses
-MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", 400))
+MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", 8192))
 
 # Model-specific configurations
 MODEL_CONFIGS = {
     "deepseek/deepseek-v4-flash": {
-        "timeout": 60,      # tune if needed
+        "timeout": 90,      # tune if needed
     },
     "deepseek/deepseek-r1": {
         "timeout": 90,  # Longer timeout for DeepSeek-R1
@@ -139,7 +139,7 @@ MODEL_CONFIGS = {
         "timeout": 90,
     },
     "deepseek/deepseek-chat": {
-        "timeout": 60,
+        "timeout": 90,
     },
 }
 
