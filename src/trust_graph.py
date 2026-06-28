@@ -358,11 +358,29 @@ class TrustGraph:
         if prompt is None:
             return
 
-        try:
-            response = get_llm_response(model_name, prompt)
-            self._apply_updates(response, alive_players, current_round)
-        except Exception as e:
-            print(f"[{self.player_name}] Graph update failed: {e}")
+        MAX_ATTEMPTS = 2
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            try:
+                response = get_llm_response(model_name, prompt)
+                updates = self._parse_updates(response)
+                self._apply_updates(updates, alive_players, current_round)
+                return  # success – updates applied
+            except (json.JSONDecodeError, ValueError, Exception) as e:
+                if attempt == MAX_ATTEMPTS:
+                    print(f"[{self.player_name}] Graph update failed after {MAX_ATTEMPTS} attempts: {e}")
+                else:
+                    print(f"[{self.player_name}] Graph update attempt {attempt} failed, retrying: {e}")
+
+    def _parse_updates(self, response: str) -> dict:
+        """
+        Extract the JSON payload from the LLM response and parse it.
+
+        Raises ValueError if no JSON is found; raises JSONDecodeError on parse failure.
+        """
+        json_match = re.search(r"\{[\s\S]*\}", response)
+        if not json_match:
+            raise ValueError("No JSON found in graph update response")
+        return json.loads(json_match.group())
 
     def _build_update_prompt(self, alive_players, last_round_history: str, current_round: int, bigfive_estimates: dict = None, night_outcome: str = ""):
         """
@@ -502,27 +520,16 @@ Respond ONLY with valid JSON:
 """
         return prompt
 
-    def _apply_updates(self, response: str, alive_players, current_round: int) -> None:
+    def _apply_updates(self, updates: dict, alive_players, current_round: int) -> None:
         """
         Parse the LLM response and apply updates to the graph using incremental blending.
         All graph nodes are keyed by player_name.
 
         Args:
-            response (str): Raw LLM response text.
+            updates (dict): Already parsed JSON containing player_assessments and observed_relationships.
             alive_players (list): List of alive Player objects.
             current_round (int): Current round number.
         """
-        # Extract JSON from response
-        try:
-            json_match = re.search(r"\{[\s\S]*\}", response)
-            if not json_match:
-                print(f"[{self.player_name}] No JSON found in graph update response")
-                return
-            updates = json.loads(json_match.group())
-        except json.JSONDecodeError as e:
-            print(f"[{self.player_name}] Failed to parse graph update JSON: {e}")
-            return
-
         alive_names = {p.player_name for p in alive_players}
 
         # Blending factor: how much weight to give new assessment vs old
