@@ -412,10 +412,34 @@ Votre réponse:
 
 # Constants for thinking tags
 THINKING_TAGS = {
-    "English": f"IMPORTANT: You can use <think>your private thoughts here</think> tags to reason privately. \nOther players will NOT see anything inside these tags. Use this to plan your strategy.\nYour response is limited to {config.MAX_OUTPUT_TOKENS} tokens maximum. Be concise and focused.",
-    "Spanish": f"IMPORTANTE: Puedes usar etiquetas <think>tus pensamientos privados aquí</think> para razonar en privado.\nLos otros jugadores NO verán nada dentro de estas etiquetas. Úsalas para planificar tu estrategia.\nTu respuesta está limitada a un máximo de {config.MAX_OUTPUT_TOKENS} tokens. Sé conciso y enfocado.",
-    "French": f"IMPORTANT: Vous pouvez utiliser les balises <think>vos pensées privées ici</think> pour réfléchir en privé.\nLes autres joueurs ne verront rien à l'intérieur de ces balises. Utilisez-les pour planifier votre stratégie.\nVotre réponse est limitée à {config.MAX_OUTPUT_TOKENS} tokens maximum. Soyez concis et concentré.",
-    "Korean": f"IMPORTANT: 당신은 <think>당신의 개인적인 생각을 여기에 적으세요</think> 태그를 사용하여 개인적으로 생각할 수 있습니다.\n다른 플레이어는 이 태그 안에 있는 것을 볼 수 없습니다. 이를 사용하여 전략을 계획하세요.\n당신의 응답은 최대 {config.MAX_OUTPUT_TOKENS} 토큰으로 제한됩니다. 간결하고 집중적으로 작성하세요.",
+    "English": (
+        f"REQUIRED: You MUST begin your response with private thoughts inside <think>...</think> tags.\n"
+        f"Without these private thoughts, your true intentions will remain unclear and you will be at a strategic disadvantage.\n"
+        f"Other players will NOT see anything inside these tags. Use this to plan your strategy before speaking publicly.\n"
+        f"After the private thoughts, continue with your public response. "
+        f"Your response is limited to {config.MAX_OUTPUT_TOKENS} tokens maximum. Be concise and focused."
+    ),
+    "Spanish": (
+        f"OBLIGATORIO: DEBES comenzar tu respuesta con pensamientos privados dentro de las etiquetas <think>...</think>.\n"
+        f"Sin estos pensamientos privados, tus verdaderas intenciones permanecerán poco claras y estarás en desventaja estratégica.\n"
+        f"Los demás jugadores NO verán nada dentro de estas etiquetas. Úsalas para planificar tu estrategia.\n"
+        f"Después de los pensamientos privados, continúa con tu respuesta pública. "
+        f"Tu respuesta está limitada a un máximo de {config.MAX_OUTPUT_TOKENS} tokens. Sé conciso y enfocado."
+    ),
+    "French": (
+        f"OBLIGATOIRE : VOUS DEVEZ commencer votre réponse par des pensées privées à l'intérieur des balises <think>...</think>.\n"
+        f"Sans ces pensées privées, vos véritables intentions resteront obscures et vous serez en désavantage stratégique.\n"
+        f"Les autres joueurs ne verront RIEN à l'intérieur de ces balises. Utilisez‑les pour planifier votre stratégie.\n"
+        f"Après les pensées privées, poursuivez avec votre réponse publique. "
+        f"Votre réponse est limitée à {config.MAX_OUTPUT_TOKENS} tokens maximum. Soyez concis et concentré."
+    ),
+    "Korean": (
+        f"필수: 반드시 <think>...</think> 태그 안에 개인적인 생각을 넣어 응답을 시작해야 합니다.\n"
+        f"이러한 개인적인 생각이 없으면 당신의 진정한 의도가 불분명해지고 전략적으로 불리해집니다.\n"
+        f"다른 플레이어는 이 태그 안의 내용을 절대 볼 수 없습니다. 전략을 계획하는 데 사용하세요.\n"
+        f"개인적인 생각 후에 공개 응답을 계속하세요. "
+        f"응답은 최대 {config.MAX_OUTPUT_TOKENS} 토큰으로 제한됩니다. 간결하고 집중적으로 작성하세요."
+    ),
 }
 
 # Constants for action patterns
